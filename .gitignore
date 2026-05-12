@@ -1,0 +1,13 @@
+.env
+.env.local
+*.env
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+.next/
+dist/
+build/
+.DS_Store
+.vercel/
+.mcp.json

@@ -1,0 +1,90 @@
+#
+# docker-compose.yml for Hermes Agent + RZG AI
+#
+# ── Hermes original services ─────────────────────────────────────────────────
+# Usage:
+#   HERMES_UID=$(id -u) HERMES_GID=$(id -g) docker compose up -d
+#
+# ── RZG AI services (profile: rzg) ───────────────────────────────────────────
+# Usage:
+#   docker compose --profile rzg up -d --build
+#
+# Services:
+#   rzg-hermes-adapter :8001  — FastAPI wrapper around AIAgent
+#   rzg-web            :3000  — Next.js dashboard
+#
+services:
+  # ── RZG AI ────────────────────────────────────────────────────────────────
+
+  rzg-hermes-adapter:
+    profiles: ["rzg"]
+    build:
+      context: .
+      dockerfile: hermes-adapter/Dockerfile
+    container_name: rzg-hermes-adapter
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    env_file:
+      - hermes-adapter/.env
+    environment:
+      - PYTHONPATH=/hermes
+    volumes:
+      - rzg_hermes_home:/root/.hermes
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  rzg-web:
+    profiles: ["rzg"]
+    build:
+      context: ./rzg-web
+      dockerfile: Dockerfile
+    container_name: rzg-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - rzg-web/.env.local
+    environment:
+      - RZG_ADAPTER_URL=http://rzg-hermes-adapter:8001
+      - NODE_ENV=production
+    depends_on:
+      rzg-hermes-adapter:
+        condition: service_healthy
+
+  # ── Original Hermes services ──────────────────────────────────────────────
+
+  gateway:
+    build: .
+    image: hermes-agent
+    container_name: hermes
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ~/.hermes:/opt/data
+    environment:
+      - HERMES_UID=${HERMES_UID:-10000}
+      - HERMES_GID=${HERMES_GID:-10000}
+      # - API_SERVER_HOST=0.0.0.0
+      # - API_SERVER_KEY=${API_SERVER_KEY}
+    command: ["gateway", "run"]
+
+  dashboard:
+    image: hermes-agent
+    container_name: hermes-dashboard
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      - gateway
+    volumes:
+      - ~/.hermes:/opt/data
+    environment:
+      - HERMES_UID=${HERMES_UID:-10000}
+      - HERMES_GID=${HERMES_GID:-10000}
+    command: ["dashboard", "--host", "127.0.0.1", "--no-open"]
+
+volumes:
+  rzg_hermes_home:
