@@ -4,7 +4,7 @@ import { agents, tasks, taskRuns, workspaces } from "@/lib/db/schema";
 import { eq, count, desc } from "drizzle-orm";
 import Link from "next/link";
 import {
-  Bot, ListTodo, CheckCircle2, Clock, AlertCircle, Plus, ArrowRight, Zap,
+  Bot, ListTodo, CheckCircle2, Clock, AlertCircle, Plus, ArrowRight, Zap, Activity,
 } from "lucide-react";
 
 export const metadata = { title: "Dashboard — RZG AI" };
@@ -13,24 +13,12 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const [workspace] = await db
-    .select()
-    .from(workspaces)
-    .where(eq(workspaces.ownerId, user!.id))
-    .limit(1);
+  const [workspace] = await db.select().from(workspaces).where(eq(workspaces.ownerId, user!.id)).limit(1);
 
-  const [agentCount] = await db
-    .select({ count: count() })
-    .from(agents)
-    .where(eq(agents.workspaceId, workspace.id));
-
-  const [taskCount] = await db
-    .select({ count: count() })
-    .from(tasks)
-    .where(eq(tasks.workspaceId, workspace.id));
-
-  const recentRuns = await db
-    .select({
+  const [[agentCount], [taskCount], recentRuns] = await Promise.all([
+    db.select({ count: count() }).from(agents).where(eq(agents.workspaceId, workspace.id)),
+    db.select({ count: count() }).from(tasks).where(eq(tasks.workspaceId, workspace.id)),
+    db.select({
       id: taskRuns.id,
       status: taskRuns.status,
       startedAt: taskRuns.startedAt,
@@ -43,203 +31,273 @@ export default async function DashboardPage() {
     .innerJoin(tasks, eq(taskRuns.taskId, tasks.id))
     .where(eq(tasks.workspaceId, workspace.id))
     .orderBy(desc(taskRuns.createdAt))
-    .limit(8);
+    .limit(8),
+  ]);
 
-  const completedCount = recentRuns.filter((r) => r.status === "completed").length;
-  const runningCount = recentRuns.filter((r) => r.status === "running").length;
+  const completedRuns = recentRuns.filter((r) => r.status === "completed");
+  const failedRuns    = recentRuns.filter((r) => r.status === "failed");
+  const runningRuns   = recentRuns.filter((r) => r.status === "running");
+
+  const isEmpty = recentRuns.length === 0;
 
   return (
-    <div className="p-8 max-w-5xl space-y-8">
-      {/* Header */}
-      <div className="flex items-end justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "#2d4a8a" }}>
-            Command Center
-          </p>
-          <h1 className="text-2xl font-bold text-white">Overview</h1>
-          <p className="text-sm mt-0.5" style={{ color: "#4a5568" }}>{workspace.name}</p>
-        </div>
-        <Link
-          href="/dashboard/agents/new"
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all"
-          style={{ background: "#1d4ed8" }}
-        >
-          <Plus className="w-4 h-4" />
-          New Worker
-        </Link>
-      </div>
-
-      {/* Stats row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard label="AI Workers" value={agentCount.count} icon={<Bot className="w-4 h-4" />} accentColor="#3b82f6" />
-        <StatCard label="Tasks" value={taskCount.count} icon={<ListTodo className="w-4 h-4" />} accentColor="#8b5cf6" />
-        <StatCard label="Completed" value={completedCount} icon={<CheckCircle2 className="w-4 h-4" />} accentColor="#22c55e" />
-        <StatCard label="Running" value={runningCount} icon={<Zap className="w-4 h-4" />} accentColor="#f59e0b" />
-      </div>
-
-      {/* Activity feed */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#2d3a52" }}>
-            Recent Activity
-          </h2>
-          <Link href="/dashboard/tasks" className="text-xs flex items-center gap-1 transition-colors" style={{ color: "#4a5568" }}>
-            All tasks <ArrowRight className="w-3 h-3" />
+    <div className="h-full flex flex-col">
+      {/* Page header */}
+      <div className="px-8 py-6 border-b border-border">
+        <p className="text-xs font-semibold uppercase tracking-widest text-blue-400/70 mb-1">Command Center</p>
+        <div className="flex items-end justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Overview</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">{workspace.name}</p>
+          </div>
+          <Link
+            href="/dashboard/agents/new"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            New Worker
           </Link>
         </div>
+      </div>
 
-        {recentRuns.length === 0 ? (
-          <div className="rounded-xl p-12 text-center" style={{ background: "#0b0e18", border: "1px solid #1e2640" }}>
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-3"
-              style={{ background: "rgba(37,99,235,0.1)", border: "1px solid rgba(37,99,235,0.2)" }}>
-              <Bot className="w-5 h-5" style={{ color: "#3b82f6" }} />
+      {/* 3-column layout */}
+      <div className="flex-1 grid grid-cols-[220px_1fr_260px] divide-x divide-border overflow-hidden">
+
+        {/* ── Left: Operations summary ── */}
+        <div className="overflow-y-auto p-5 space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">Metrics</p>
+
+          <div className="space-y-2">
+            <StatRow
+              icon={<Bot className="w-4 h-4 text-blue-400" />}
+              label="AI Workers"
+              value={agentCount.count}
+              href="/dashboard/agents"
+            />
+            <StatRow
+              icon={<ListTodo className="w-4 h-4 text-violet-400" />}
+              label="Tasks"
+              value={taskCount.count}
+              href="/dashboard/tasks"
+            />
+            <StatRow
+              icon={<CheckCircle2 className="w-4 h-4 text-green-400" />}
+              label="Completed"
+              value={completedRuns.length}
+            />
+            <StatRow
+              icon={<Activity className="w-4 h-4 text-yellow-400" />}
+              label="Running"
+              value={runningRuns.length}
+            />
+            <StatRow
+              icon={<AlertCircle className="w-4 h-4 text-red-400" />}
+              label="Failed"
+              value={failedRuns.length}
+            />
+          </div>
+
+          <div className="pt-2 border-t border-border">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60 mb-3">System</p>
+            <div className="space-y-2">
+              <SystemRow label="Adapter" status="online" />
+              <SystemRow label="Memory" status={agentCount.count > 0 ? "ready" : "idle"} />
+              <SystemRow label="Streaming" status="live" />
             </div>
-            <p className="text-sm font-medium text-white mb-1">No runs yet</p>
-            <p className="text-xs mb-4" style={{ color: "#4a5568" }}>
-              Create an AI worker and run your first task to see activity here.
+          </div>
+        </div>
+
+        {/* ── Center: Activity feed ── */}
+        <div className="overflow-y-auto flex flex-col">
+          <div className="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
+              Recent Executions
             </p>
-            <Link
-              href="/dashboard/agents/new"
-              className="inline-flex items-center gap-1.5 text-xs font-medium transition-colors"
-              style={{ color: "#3b82f6" }}
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Create your first AI worker
+            <Link href="/dashboard/tasks" className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors">
+              All tasks <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
-        ) : (
-          <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #1e2640" }}>
-            {recentRuns.map((run, i) => (
+
+          {isEmpty ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4">
+                <Zap className="w-6 h-6 text-blue-400" />
+              </div>
+              <p className="font-semibold text-sm mb-1">No executions yet</p>
+              <p className="text-xs text-muted-foreground max-w-xs leading-relaxed mb-6">
+                Create an AI worker and run a task. Every execution will appear here as a real-time feed.
+              </p>
+              {agentCount.count === 0 ? (
+                <Link href="/dashboard/agents/new" className="flex items-center gap-1.5 text-sm text-blue-400 hover:text-blue-300 transition-colors font-medium">
+                  <Plus className="w-3.5 h-3.5" />
+                  Create your first AI worker
+                </Link>
+              ) : (
+                <Link href="/dashboard/tasks" className="flex items-center gap-1.5 text-sm text-blue-400 hover:text-blue-300 transition-colors font-medium">
+                  <Zap className="w-3.5 h-3.5" />
+                  Run a task
+                </Link>
+              )}
+            </div>
+          ) : (
+            <div className="divide-y divide-border/60">
+              {recentRuns.map((run) => (
+                <Link
+                  key={run.id}
+                  href={`/dashboard/tasks/${run.taskId}`}
+                  className="activity-row group"
+                >
+                  <RunDot status={run.status} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate group-hover:text-blue-300 transition-colors">
+                      {run.taskName}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">{run.inputPrompt}</p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <RunStatusBadge status={run.status} />
+                    <p className="text-xs text-muted-foreground/50 mt-1">
+                      {run.startedAt ? new Date(run.startedAt).toLocaleDateString() : "—"}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Right: Quick launch + info ── */}
+        <div className="overflow-y-auto p-5 space-y-5">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60 mb-3">
+              Quick Launch
+            </p>
+            <div className="space-y-2">
               <Link
-                key={run.id}
-                href={`/dashboard/tasks/${run.taskId}`}
-                className="flex items-center gap-4 px-4 py-3 group transition-all"
-                style={{
-                  background: i % 2 === 0 ? "#0b0e18" : "#0d1120",
-                  borderBottom: i < recentRuns.length - 1 ? "1px solid #151c2c" : "none",
-                }}
+                href="/dashboard/agents/new"
+                className="flex items-center gap-3 p-3 panel rounded-lg hover:border-blue-500/30 transition-colors group"
               >
-                <RunStatusDot status={run.status} />
+                <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
+                  <Bot className="w-4 h-4 text-blue-400" />
+                </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate" style={{ marginBottom: 1 }}>
-                    {run.taskName}
-                  </p>
-                  <p className="text-xs truncate" style={{ color: "#3a4455" }}>{run.inputPrompt}</p>
+                  <p className="text-xs font-semibold">New AI Worker</p>
+                  <p className="text-xs text-muted-foreground">From template</p>
                 </div>
-                <div className="shrink-0 text-right">
-                  <RunStatusBadge status={run.status} />
-                  <p className="text-xs mt-0.5" style={{ color: "#2d3a52" }}>
-                    {run.startedAt ? new Date(run.startedAt).toLocaleDateString() : "—"}
-                  </p>
-                </div>
-                <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" style={{ color: "#3a4455" }} />
+                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </Link>
-            ))}
+
+              <Link
+                href="/dashboard/tasks"
+                className="flex items-center gap-3 p-3 panel rounded-lg hover:border-violet-500/30 transition-colors group"
+              >
+                <div className="w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
+                  <Zap className="w-4 h-4 text-violet-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold">Run Task</p>
+                  <p className="text-xs text-muted-foreground">Execute now</p>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              </Link>
+
+              <Link
+                href="/dashboard/memory"
+                className="flex items-center gap-3 p-3 panel rounded-lg hover:border-cyan-500/30 transition-colors group"
+              >
+                <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0">
+                  <Activity className="w-4 h-4 text-cyan-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold">Memory Vault</p>
+                  <p className="text-xs text-muted-foreground">Manage context</p>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              </Link>
+            </div>
           </div>
-        )}
-      </div>
 
-      {/* Quick actions */}
-      {(agentCount.count === 0 || taskCount.count === 0) && (
-        <div className="grid sm:grid-cols-2 gap-3">
-          {agentCount.count === 0 && (
-            <QuickAction
-              href="/dashboard/agents/new"
-              icon={<Bot className="w-5 h-5" style={{ color: "#3b82f6" }} />}
-              title="Create your first AI worker"
-              description="Set up a specialist agent from a template"
-              accentColor="rgba(37,99,235,0.08)"
-            />
-          )}
-          {agentCount.count > 0 && taskCount.count === 0 && (
-            <QuickAction
-              href="/dashboard/tasks"
-              icon={<Zap className="w-5 h-5" style={{ color: "#8b5cf6" }} />}
-              title="Run your first task"
-              description="Assign a task to your AI worker and watch it execute"
-              accentColor="rgba(139,92,246,0.08)"
-            />
+          {/* Run breakdown */}
+          {recentRuns.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60 mb-3">
+                Run Breakdown
+              </p>
+              <div className="panel rounded-lg overflow-hidden">
+                <BreakdownRow label="Completed" count={completedRuns.length} color="bg-green-500" total={recentRuns.length} />
+                <BreakdownRow label="Running"   count={runningRuns.length}   color="bg-yellow-500" total={recentRuns.length} />
+                <BreakdownRow label="Failed"    count={failedRuns.length}    color="bg-red-500"    total={recentRuns.length} />
+              </div>
+            </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
 
-function StatCard({
-  label, value, icon, accentColor,
-}: {
-  label: string;
-  value: number;
-  icon: React.ReactNode;
-  accentColor: string;
-}) {
-  return (
-    <div className="rounded-xl p-4" style={{ background: "#0b0e18", border: "1px solid #1e2640" }}>
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-medium" style={{ color: "#4a5568" }}>{label}</span>
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${accentColor}22`, color: accentColor }}>
-          {icon}
-        </div>
-      </div>
-      <p className="text-3xl font-bold text-white tracking-tight">{value}</p>
+// ── Sub-components ────────────────────────────────────────────────────
+
+function StatRow({ icon, label, value, href }: { icon: React.ReactNode; label: string; value: number; href?: string }) {
+  const inner = (
+    <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/3 transition-colors group">
+      <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center shrink-0">{icon}</div>
+      <span className="flex-1 text-sm text-muted-foreground">{label}</span>
+      <span className="text-sm font-bold tabular-nums text-foreground">{value}</span>
     </div>
   );
+  return href ? <Link href={href}>{inner}</Link> : <div>{inner}</div>;
 }
 
-function RunStatusDot({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    completed: "#22c55e",
-    running: "#f59e0b",
-    failed: "#ef4444",
-    cancelled: "#4a5568",
-    pending: "#4a5568",
+function SystemRow({ label, status }: { label: string; status: string }) {
+  const statusMap: Record<string, { dot: string; text: string; label: string }> = {
+    online: { dot: "bg-green-500", text: "text-green-400", label: "Online" },
+    live:   { dot: "bg-blue-400 animate-pulse-dot", text: "text-blue-400", label: "Live" },
+    ready:  { dot: "bg-green-500", text: "text-green-400", label: "Ready" },
+    idle:   { dot: "bg-muted-foreground/30", text: "text-muted-foreground", label: "Idle" },
   };
-  const color = colors[status] ?? colors.pending;
+  const cfg = statusMap[status] ?? statusMap.idle;
   return (
-    <div className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
+    <div className="flex items-center justify-between px-3 py-1.5">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <div className="flex items-center gap-1.5">
+        <div className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+        <span className={`text-xs font-medium ${cfg.text}`}>{cfg.label}</span>
+      </div>
+    </div>
   );
+}
+
+function RunDot({ status }: { status: string }) {
+  const colors: Record<string, string> = {
+    completed: "bg-green-500",
+    running:   "bg-yellow-400",
+    failed:    "bg-red-500",
+    cancelled: "bg-muted-foreground/40",
+    pending:   "bg-muted-foreground/40",
+  };
+  return <div className={`w-2 h-2 rounded-full shrink-0 ${colors[status] ?? colors.pending}`} />;
 }
 
 function RunStatusBadge({ status }: { status: string }) {
-  const cfg: Record<string, { label: string; color: string; bg: string }> = {
-    completed: { label: "Completed", color: "#22c55e", bg: "rgba(34,197,94,0.1)" },
-    running: { label: "Running", color: "#f59e0b", bg: "rgba(245,158,11,0.1)" },
-    failed: { label: "Failed", color: "#ef4444", bg: "rgba(239,68,68,0.1)" },
-    cancelled: { label: "Cancelled", color: "#4a5568", bg: "rgba(74,85,104,0.1)" },
-    pending: { label: "Pending", color: "#4a5568", bg: "rgba(74,85,104,0.1)" },
+  const cfg: Record<string, string> = {
+    completed: "badge badge-green",
+    running:   "badge badge-yellow",
+    failed:    "badge badge-red",
+    cancelled: "badge badge-muted",
+    pending:   "badge badge-muted",
   };
-  const { label, color, bg } = cfg[status] ?? cfg.pending;
-  return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style={{ color, background: bg }}>
-      {label}
-    </span>
-  );
+  return <span className={cfg[status] ?? cfg.pending}>{status}</span>;
 }
 
-function QuickAction({
-  href, icon, title, description, accentColor,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  accentColor: string;
-}) {
+function BreakdownRow({ label, count, color, total }: { label: string; count: number; color: string; total: number }) {
+  const pct = total > 0 ? Math.round((count / total) * 100) : 0;
   return (
-    <Link
-      href={href}
-      className="flex items-start gap-4 p-5 rounded-xl transition-all group"
-      style={{ background: "#0b0e18", border: "1px solid #1e2640" }}
-    >
-      <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all" style={{ background: accentColor, border: "1px solid rgba(255,255,255,0.06)" }}>
-        {icon}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-white mb-0.5">{title}</p>
-        <p className="text-xs leading-relaxed" style={{ color: "#4a5568" }}>{description}</p>
-      </div>
-      <ArrowRight className="w-4 h-4 shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: "#4a5568" }} />
-    </Link>
+    <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border last:border-0">
+      <div className={`w-2 h-2 rounded-full ${color} shrink-0`} />
+      <span className="flex-1 text-xs text-muted-foreground">{label}</span>
+      <span className="text-xs font-semibold tabular-nums">{count}</span>
+      <span className="text-xs text-muted-foreground/50 w-8 text-right">{pct}%</span>
+    </div>
   );
 }

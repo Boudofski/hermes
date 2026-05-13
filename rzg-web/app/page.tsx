@@ -1,331 +1,433 @@
 import Link from "next/link";
 import {
-  ArrowRight, Check, Bot, Search, FileText,
-  TrendingUp, Target, Megaphone, Settings2,
-  Zap, Brain, Layers,
+  Bot, ArrowRight, CheckCircle, Zap, Brain, Activity,
+  Search, PenLine, TrendingUp, Target, Megaphone,
+  Smartphone, ClipboardList, Settings2, type LucideIcon,
 } from "lucide-react";
 
-export default function HomePage() {
+// ── Data ──────────────────────────────────────────────────────────────
+
+const TEMPLATE_ICONS: Record<string, LucideIcon> = {
+  research: Search,
+  content: PenLine,
+  seo: TrendingUp,
+  "competitor-analysis": Target,
+  marketing: Megaphone,
+  "social-media": Smartphone,
+  "proposal-writer": ClipboardList,
+  "business-automation": Settings2,
+};
+
+const TEMPLATE_ACCENTS = [
+  "accent-blue", "accent-violet", "accent-cyan",
+  "accent-green", "accent-amber", "accent-pink",
+];
+
+const MOCK_WORKERS = [
+  { name: "Research Bot",   role: "Senior Research Analyst", status: "running", model: "GPT-4o",      memory: true,  color: "blue"   },
+  { name: "Content Writer", role: "Content Specialist",      status: "idle",    model: "Claude 3.5",  memory: true,  color: "violet" },
+  { name: "Ops Manager",    role: "Operations Analyst",      status: "queued",  model: "Gemini 2.0",  memory: false, color: "green"  },
+] as const;
+
+const MOCK_LOGS = [
+  { type: "tool_start", tool: "web_search", text: "Searching: \"AI market size Q2 2025\"" },
+  { type: "tool_end",   tool: "web_search", text: "web_search" },
+  { type: "tool_start", tool: "read_url",   text: "techcrunch.com/ai-q2-report" },
+  { type: "tool_end",   tool: "read_url",   text: "read_url" },
+  { type: "text",       tool: null,         text: "Analyzing 14 sources for market data..." },
+  { type: "tool_start", tool: "write_file", text: "Drafting executive summary..." },
+  { type: "text",       tool: null,         text: "Compiling final Q2 intelligence report..." },
+];
+
+const FEATURES = [
+  {
+    icon: <Zap className="w-5 h-5 text-blue-400" />,
+    iconBg: "bg-blue-500/10 border-blue-500/20",
+    title: "Deploy in 60 seconds",
+    desc: "Pick a specialist template, configure your goal, and launch. Your AI workers run in the cloud — no infrastructure, no setup.",
+  },
+  {
+    icon: <Activity className="w-5 h-5 text-violet-400" />,
+    iconBg: "bg-violet-500/10 border-violet-500/20",
+    title: "Live execution streaming",
+    desc: "Watch every tool call, search query, and reasoning step unfold in real time. Full transparency into what your workers are doing.",
+  },
+  {
+    icon: <Brain className="w-5 h-5 text-cyan-400" />,
+    iconBg: "bg-cyan-500/10 border-cyan-500/20",
+    title: "Persistent memory layer",
+    desc: "Workers remember context across tasks. Store knowledge, preferences, and learned patterns that persist between every run.",
+  },
+];
+
+const TEMPLATES_SHOWCASE = [
+  { id: "research",            name: "Research",      role: "Deep-dives any topic",           color: "blue"   },
+  { id: "content",             name: "Content",       role: "Writes long-form content",       color: "violet" },
+  { id: "seo",                 name: "SEO",           role: "Audits & finds opportunities",   color: "cyan"   },
+  { id: "competitor-analysis", name: "Intel",         role: "Maps the competitive landscape", color: "green"  },
+  { id: "marketing",           name: "Marketing",     role: "Plans campaigns & writes copy",  color: "amber"  },
+  { id: "social-media",        name: "Social Media",  role: "Platform-native content",        color: "pink"   },
+];
+
+const ACCENT_CLS: Record<string, string> = {
+  blue:   "text-blue-400 bg-blue-500/10 border-blue-500/20",
+  violet: "text-violet-400 bg-violet-500/10 border-violet-500/20",
+  cyan:   "text-cyan-400 bg-cyan-500/10 border-cyan-500/20",
+  green:  "text-green-400 bg-green-500/10 border-green-500/20",
+  amber:  "text-amber-400 bg-amber-500/10 border-amber-500/20",
+  pink:   "text-pink-400 bg-pink-500/10 border-pink-500/20",
+};
+
+// ── Page ──────────────────────────────────────────────────────────────
+
+export default function LandingPage() {
   return (
-    <div className="min-h-screen" style={{ background: "#07090f", color: "#e2e8f0" }}>
-      {/* ── Nav ─────────────────────────────────────────────────────────── */}
-      <nav
-        className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-6 lg:px-10"
-        style={{ background: "rgba(7,9,15,0.85)", backdropFilter: "blur(16px)", borderBottom: "1px solid #1e2640" }}
-      >
-        <Link href="/" className="flex items-center gap-2.5 mr-10">
-          <div className="w-7 h-7 rounded-md bg-blue-600 flex items-center justify-center">
-            <Bot className="w-4 h-4 text-white" />
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+
+      {/* Navbar */}
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/40 backdrop-blur-md bg-background/80">
+        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-6">
+          <Link href="/" className="flex items-center gap-2 shrink-0">
+            <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
+              <Bot className="w-4 h-4 text-white" />
+            </div>
+            <span className="font-bold text-sm">RZG AI</span>
+          </Link>
+
+          <div className="hidden md:flex items-center gap-0.5 flex-1">
+            {["AI Workers", "How It Works", "Templates"].map((item) => (
+              <span key={item} className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-default rounded-lg hover:bg-white/5">
+                {item}
+              </span>
+            ))}
           </div>
-          <span className="font-bold text-white text-[15px]">RZG AI</span>
-        </Link>
-        <div className="hidden md:flex items-center gap-6 text-sm" style={{ color: "#6b7a95" }}>
-          <Link href="#workers" className="hover:text-white transition-colors">AI Workers</Link>
-          <Link href="#how" className="hover:text-white transition-colors">How it works</Link>
-          <Link href="#why" className="hover:text-white transition-colors">Why RZG</Link>
-        </div>
-        <div className="ml-auto flex items-center gap-3">
-          <Link href="/login" className="text-sm px-3 py-1.5 rounded-md transition-colors hover:text-white" style={{ color: "#6b7a95" }}>
-            Sign in
-          </Link>
-          <Link href="/register" className="text-sm font-semibold px-4 py-2 rounded-md text-white transition-all glow-blue" style={{ background: "#1d4ed8" }}>
-            Start free
-          </Link>
+
+          <div className="flex items-center gap-2 ml-auto">
+            <Link href="/login" className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Sign in
+            </Link>
+            <Link
+              href="/register"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-lg transition-colors"
+            >
+              Start free <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
       </nav>
 
-      {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <section className="relative min-h-screen flex items-center pt-14 overflow-hidden">
-        <div className="absolute inset-0 bg-radial-blue pointer-events-none" />
-        <div className="absolute inset-0 bg-dot-pattern opacity-40 pointer-events-none" />
+      {/* ── Hero ── */}
+      <section className="relative pt-32 pb-20 hero-grid">
+        <div className="absolute inset-0 pointer-events-none bg-radial-blue" />
+        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-blue-500/25 to-transparent" />
 
-        <div className="relative max-w-7xl mx-auto px-6 lg:px-10 grid lg:grid-cols-2 gap-12 lg:gap-20 items-center py-24">
-          {/* Left */}
-          <div>
-            <div
-              className="inline-flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full mb-8"
-              style={{ background: "rgba(37,99,235,0.1)", border: "1px solid rgba(37,99,235,0.25)", color: "#60a5fa" }}
+        <div className="relative max-w-6xl mx-auto px-6 text-center">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium badge badge-blue mb-8">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse-dot" />
+            AI Workforce OS · 8 specialist templates ready to deploy
+          </div>
+
+          {/* Headline */}
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.07] mb-6">
+            Deploy your<br />
+            <span className="text-gradient">AI workforce.</span>
+          </h1>
+
+          <p className="text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed mb-10">
+            Specialist AI workers that research, write, analyze, and execute — autonomously.
+            Watch them work in real time. No infrastructure. No setup.
+          </p>
+
+          {/* CTAs */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-20">
+            <Link
+              href="/register"
+              className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition-all text-sm shadow-lg shadow-blue-500/20"
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse-dot" />
-              Workers executing right now
+              Start free — no credit card
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link
+              href="/login"
+              className="flex items-center gap-2 px-6 py-3 border border-border hover:border-blue-500/40 text-muted-foreground hover:text-foreground rounded-xl transition-all text-sm"
+            >
+              Sign in to dashboard
+            </Link>
+          </div>
+
+          {/* ── Command Center Mockup ── */}
+          <CommandCenterMockup />
+        </div>
+      </section>
+
+      {/* ── Features ── */}
+      <section className="py-24 max-w-6xl mx-auto px-6">
+        <div className="text-center mb-14">
+          <p className="text-xs font-semibold uppercase tracking-widest text-blue-400 mb-3">
+            Why teams use RZG AI
+          </p>
+          <h2 className="text-3xl font-bold">Everything your AI team needs</h2>
+        </div>
+        <div className="grid sm:grid-cols-3 gap-5">
+          {FEATURES.map((f) => (
+            <div key={f.title} className="panel p-6 space-y-4">
+              <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${f.iconBg}`}>
+                {f.icon}
+              </div>
+              <div>
+                <h3 className="font-semibold mb-1.5">{f.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+              </div>
             </div>
+          ))}
+        </div>
+      </section>
 
-            <h1
-              className="font-bold leading-[1.06] tracking-tight mb-6"
-              style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)", lineHeight: "1.06" }}
-            >
-              Deploy AI workers.
-              <br />
-              <span className="text-gradient">Not chatbots.</span>
-            </h1>
-
-            <p className="text-lg mb-8 leading-relaxed max-w-lg" style={{ color: "#8b95a7" }}>
-              RZG AI gives you autonomous specialists — not assistants. Each worker has a defined role, goal, and
-              skill set. They research, write, and execute while you focus on what matters.
+      {/* ── Templates ── */}
+      <section className="py-20 border-t border-border">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-14">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+              Specialist Templates
             </p>
+            <h2 className="text-3xl font-bold mb-3">Your AI workforce roster</h2>
+            <p className="text-sm text-muted-foreground max-w-lg mx-auto">
+              Eight pre-built specialist workers with expert-crafted system prompts and optimized model selection.
+            </p>
+          </div>
 
-            <div className="flex items-center gap-4 mb-10">
-              <Link
-                href="/register"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white text-sm transition-all glow-blue"
-                style={{ background: "#1d4ed8" }}
-              >
-                Start building free
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
-                href="/login"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium text-sm transition-colors"
-                style={{ color: "#6b7a95", border: "1px solid #1e2640" }}
-              >
-                Sign in
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5">
-              {[
-                "Autonomous multi-step execution",
-                "Live streaming execution logs",
-                "Persistent memory across tasks",
-                "8 specialist role templates",
-              ].map((f) => (
-                <div key={f} className="flex items-center gap-2 text-sm" style={{ color: "#8b95a7" }}>
-                  <Check className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                  {f}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {TEMPLATES_SHOWCASE.map((t, i) => {
+              const Icon = TEMPLATE_ICONS[t.id] ?? Bot;
+              const cls = ACCENT_CLS[t.color];
+              return (
+                <div key={t.id} className={`worker-card ${TEMPLATE_ACCENTS[i % TEMPLATE_ACCENTS.length]}`}>
+                  <div className="p-5 space-y-3">
+                    <div className={`w-9 h-9 rounded-lg border flex items-center justify-center ${cls}`}>
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">{t.name} Agent</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t.role}</p>
+                    </div>
+                  </div>
                 </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA ── */}
+      <section className="py-24 border-t border-border">
+        <div className="max-w-3xl mx-auto px-6 text-center">
+          <h2 className="text-4xl font-bold mb-4">
+            Ready to deploy your <span className="text-gradient">AI workforce?</span>
+          </h2>
+          <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+            Free workspace. First AI worker running in under 60 seconds.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              href="/register"
+              className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition-all text-sm"
+            >
+              Start free <ArrowRight className="w-4 h-4" />
+            </Link>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              {["No credit card", "8 templates included", "Live streaming"].map((x) => (
+                <span key={x} className="flex items-center gap-1">
+                  <CheckCircle className="w-3.5 h-3.5 text-blue-500" />
+                  {x}
+                </span>
               ))}
             </div>
           </div>
-
-          {/* Right — product preview */}
-          <div className="hidden lg:block">
-            <ProductPreview />
-          </div>
         </div>
       </section>
 
-      {/* ── Workers ─────────────────────────────────────────────────────── */}
-      <section id="workers" className="py-24 px-6 lg:px-10" style={{ borderTop: "1px solid #1e2640" }}>
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-14">
-            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: "#3b82f6" }}>
-              AI Workers
-            </p>
-            <h2 className="text-3xl lg:text-4xl font-bold text-white mb-3">One platform. Every specialist.</h2>
-            <p className="text-base" style={{ color: "#6b7a95", maxWidth: "480px" }}>
-              Purpose-built AI workers with defined roles, goals, and skill sets. Not generic assistants.
-            </p>
+      {/* Footer */}
+      <footer className="border-t border-border py-8">
+        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-md bg-blue-600 flex items-center justify-center">
+              <Bot className="w-3.5 h-3.5 text-white" />
+            </div>
+            <span className="text-sm font-semibold">RZG AI</span>
           </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {WORKERS.map(({ icon: Icon, label, desc, accent }) => (
-              <div
-                key={label}
-                className="rounded-xl p-5 group transition-all"
-                style={{ background: "#0b0e18", border: "1px solid #1e2640" }}
-              >
-                <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center mb-4"
-                  style={{ background: accent.bg }}
-                >
-                  <Icon className="w-4.5 h-4.5" style={{ color: accent.icon }} />
-                </div>
-                <p className="font-semibold text-white text-sm mb-1.5">{label}</p>
-                <p className="text-xs leading-relaxed" style={{ color: "#6b7a95" }}>{desc}</p>
-              </div>
-            ))}
-          </div>
+          <p className="text-xs text-muted-foreground">© 2026 RZG AI</p>
         </div>
-      </section>
-
-      {/* ── How it works ────────────────────────────────────────────────── */}
-      <section id="how" className="py-24 px-6 lg:px-10" style={{ borderTop: "1px solid #1e2640", background: "#09010d" }}>
-        <div className="max-w-4xl mx-auto">
-          <p className="text-xs font-semibold uppercase tracking-widest mb-3 text-center" style={{ color: "#22d3ee" }}>
-            How it works
-          </p>
-          <h2 className="text-3xl lg:text-4xl font-bold text-white text-center mb-16">Running in under 5 minutes</h2>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {STEPS.map(({ n, title, desc }) => (
-              <div key={n} className="relative">
-                <div
-                  className="text-[64px] font-black leading-none mb-4 select-none"
-                  style={{ color: "rgba(255,255,255,0.04)", fontVariantNumeric: "tabular-nums" }}
-                >
-                  {n}
-                </div>
-                <p className="font-semibold text-white text-sm mb-2">{title}</p>
-                <p className="text-sm leading-relaxed" style={{ color: "#6b7a95" }}>{desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Why different ───────────────────────────────────────────────── */}
-      <section id="why" className="py-24 px-6 lg:px-10" style={{ borderTop: "1px solid #1e2640" }}>
-        <div className="max-w-5xl mx-auto">
-          <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: "#a78bfa" }}>
-            Why RZG AI
-          </p>
-          <h2 className="text-3xl lg:text-4xl font-bold text-white mb-3">Not a chatbot. A workforce.</h2>
-          <p className="text-base mb-14" style={{ color: "#6b7a95", maxWidth: "480px" }}>
-            RZG AI workers are autonomous specialists that reason, search, and execute — not just generate text.
-          </p>
-
-          <div className="grid sm:grid-cols-2 gap-4">
-            {WHY.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="flex gap-4 rounded-xl p-5" style={{ background: "#0b0e18", border: "1px solid #1e2640" }}>
-                <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center shrink-0 mt-0.5">
-                  <Icon className="w-4 h-4 text-violet-400" />
-                </div>
-                <div>
-                  <p className="font-semibold text-white text-sm mb-1">{title}</p>
-                  <p className="text-sm leading-relaxed" style={{ color: "#6b7a95" }}>{desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── CTA ─────────────────────────────────────────────────────────── */}
-      <section className="py-24 px-6 lg:px-10" style={{ borderTop: "1px solid #1e2640", background: "#09010d" }}>
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">Ready to hire your AI workforce?</h2>
-          <p className="text-base mb-8" style={{ color: "#6b7a95" }}>
-            Start free. No credit card. Deploy your first worker in minutes.
-          </p>
-          <Link
-            href="/register"
-            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-semibold text-white text-sm transition-all glow-blue"
-            style={{ background: "#1d4ed8" }}
-          >
-            Get started free
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-      </section>
-
-      {/* ── Footer ──────────────────────────────────────────────────────── */}
-      <footer className="py-8 px-6 lg:px-10 flex items-center justify-between" style={{ borderTop: "1px solid #1e2640" }}>
-        <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded-md bg-blue-600 flex items-center justify-center">
-            <Bot className="w-3 h-3 text-white" />
-          </div>
-          <span className="text-sm font-bold text-white">RZG AI</span>
-        </div>
-        <p className="text-xs" style={{ color: "#3a4455" }}>© 2026 RZG AI. All rights reserved.</p>
       </footer>
     </div>
   );
 }
 
-/* ── Product preview mockup ─────────────────────────────────────────────── */
-function ProductPreview() {
+// ── Command Center Mockup ─────────────────────────────────────────────
+
+function CommandCenterMockup() {
   return (
-    <div className="relative">
-      <div className="absolute -inset-8 rounded-3xl pointer-events-none" style={{
-        background: "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(37,99,235,0.12) 0%, transparent 70%)"
-      }} />
-      <div className="relative rounded-xl overflow-hidden shadow-2xl" style={{ border: "1px solid #1e2640" }}>
-        {/* Browser chrome */}
-        <div className="flex items-center gap-3 px-4 py-3" style={{ background: "#0a0e18", borderBottom: "1px solid #1a2035" }}>
-          <div className="flex gap-1.5 shrink-0">
-            <div className="w-3 h-3 rounded-full" style={{ background: "#ff5f57" }} />
-            <div className="w-3 h-3 rounded-full" style={{ background: "#febc2e" }} />
-            <div className="w-3 h-3 rounded-full" style={{ background: "#28c840" }} />
+    <div className="relative mx-auto rounded-xl overflow-hidden shadow-2xl shadow-black/50 border border-[#1e2a45]">
+      {/* Browser chrome */}
+      <div className="flex items-center gap-3 px-4 py-2.5 bg-[#080c15] border-b border-[#131928]">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+          <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
+          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+        </div>
+        <div className="flex-1 flex justify-center">
+          <div className="flex items-center gap-2 px-4 py-0.5 rounded bg-[#0d1120] border border-[#1a2035] w-56">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+            <span className="text-xs text-[#4a5568] font-mono">rzg.ai/dashboard</span>
           </div>
-          <div className="flex-1 flex justify-center">
-            <div className="text-[10px] font-mono px-4 py-1 rounded" style={{ background: "#0d1120", color: "rgba(255,255,255,0.2)" }}>
-              rzg.ai/dashboard/tasks/run
+        </div>
+        <div className="w-16" />
+      </div>
+
+      {/* Dashboard shell */}
+      <div className="flex h-[440px] bg-[#07090f] text-left overflow-hidden">
+
+        {/* Sidebar */}
+        <div className="w-44 shrink-0 border-r border-[#1a2035] flex flex-col">
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-[#1a2035]">
+            <div className="w-6 h-6 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
+              <Bot className="w-3.5 h-3.5 text-white" />
             </div>
+            <span className="text-xs font-bold text-white">RZG AI</span>
+          </div>
+          <div className="px-2 pt-4 pb-2">
+            <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-1.5" style={{ color: "#1e2640" }}>
+              Workspace
+            </p>
+          </div>
+          <div className="px-2 flex-1 space-y-0.5">
+            {[
+              { label: "Overview",   active: false },
+              { label: "AI Workers", active: true  },
+              { label: "Tasks",      active: false },
+              { label: "Memory",     active: false },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className={`px-3 py-2 rounded-lg text-xs ${
+                  item.active ? "bg-blue-600/15 text-blue-400 font-medium" : "text-[#3a4455]"
+                }`}
+              >
+                {item.label}
+              </div>
+            ))}
+          </div>
+          <div className="px-2 py-3 border-t border-[#1a2035]">
+            <div className="px-3 py-1.5 rounded-lg text-[11px] text-[#2d3a52]">Sign out</div>
           </div>
         </div>
 
-        {/* App shell */}
-        <div className="flex" style={{ background: "#08010e", minHeight: "380px" }}>
-          {/* Mini sidebar */}
-          <div className="w-10 shrink-0 flex flex-col items-center py-3 gap-3" style={{ borderRight: "1px solid #1a2035" }}>
-            <div className="w-6 h-6 rounded-md bg-blue-600 flex items-center justify-center">
-              <Bot className="w-3.5 h-3.5 text-white" />
+        {/* Workers column */}
+        <div className="w-60 shrink-0 border-r border-[#1a2035] flex flex-col">
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1a2035]">
+            <span className="text-xs font-semibold text-white">AI Workers</span>
+            <span className="badge badge-blue" style={{ fontSize: "10px" }}>3 deployed</span>
+          </div>
+          <div className="p-3 space-y-2 flex-1 overflow-hidden">
+            {MOCK_WORKERS.map((w) => (
+              <MockWorkerRow key={w.name} {...w} />
+            ))}
+          </div>
+        </div>
+
+        {/* Execution console */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1a2035]">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-white">Execution Console</span>
+              <span className="text-[10px] text-[#3a4455] font-mono">· Research Bot</span>
             </div>
-            {[0,1,2,3].map(i => (
-              <div key={i} className="w-5 h-5 rounded" style={{ background: i === 1 ? "rgba(37,99,235,0.2)" : "rgba(255,255,255,0.04)" }} />
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse-dot" />
+              <span className="text-[10px] text-blue-400 font-mono font-semibold">LIVE</span>
+            </div>
+          </div>
+
+          <div className="flex-1 p-4 space-y-1.5 overflow-hidden bg-[#050709]">
+            {MOCK_LOGS.map((log, i) => (
+              <MockLogLine key={i} {...log} />
             ))}
           </div>
 
-          {/* Main */}
-          <div className="flex-1 p-4 space-y-3 overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center gap-2 mb-4">
-              <div className="text-xs font-medium text-white/70">Research Agent</div>
-              <span
-                className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full"
-                style={{ background: "rgba(234,179,8,0.1)", color: "#eab308" }}
-              >
-                Running
-              </span>
-            </div>
-
-            {/* Task prompt */}
-            <div className="text-[10px] rounded-lg px-3 py-2.5 leading-relaxed" style={{ background: "#0d1120", color: "rgba(255,255,255,0.4)", border: "1px solid #1a2035" }}>
-              Analyze the top 5 SaaS competitors in the AI writing space. Compare pricing, features, and positioning...
-            </div>
-
-            {/* Console */}
-            <div className="rounded-lg overflow-hidden" style={{ background: "#06080e", border: "1px solid #1a2035" }}>
-              <div className="flex items-center gap-2 px-3 py-2" style={{ borderBottom: "1px solid #1a2035" }}>
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse-dot" />
-                <span className="text-[10px] font-mono" style={{ color: "rgba(255,255,255,0.25)" }}>execution.log</span>
-              </div>
-              <div className="p-3 space-y-1.5 font-mono text-[10px]">
-                <div style={{ color: "#a78bfa" }}>▶ web_search<span style={{ color: "rgba(255,255,255,0.25)" }}> starting…</span></div>
-                <div style={{ color: "#4ade80" }}>✓ web_search</div>
-                <div style={{ color: "#a78bfa" }}>▶ web_search<span style={{ color: "rgba(255,255,255,0.25)" }}> starting…</span></div>
-                <div style={{ color: "rgba(255,255,255,0.4)" }}>• Synthesizing results from 6 sources…</div>
-                <div style={{ color: "#4ade80" }}>✓ web_search</div>
-                <div className="mt-2 leading-relaxed" style={{ color: "rgba(255,255,255,0.7)" }}>
-                  Top competitors identified:<br />
-                  <span style={{ color: "#60a5fa" }}>1.</span> Jasper AI — $49/mo, content-first<br />
-                  <span style={{ color: "#60a5fa" }}>2.</span> Copy.ai — $49/mo, templates<br />
-                  <span style={{ color: "#60a5fa" }}>3.</span> Writesonic — SEO focus…
-                </div>
-              </div>
-            </div>
-
-            {/* Status */}
-            <div className="flex items-center gap-2">
-              <div className="w-1 h-1 rounded-full bg-blue-400 animate-pulse-dot" />
-              <span className="text-[10px] font-mono" style={{ color: "rgba(255,255,255,0.2)" }}>Iteration 5 / 30 · 3.2s</span>
-            </div>
+          <div className="px-4 py-2.5 border-t border-[#131928] bg-[#06080e] flex items-center gap-3">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse-dot" />
+            <span className="text-[10px] text-[#4a5568] font-mono">Iteration 7 / 30</span>
+            <span className="ml-auto text-[10px] text-[#2d3a52] font-mono">12.3s elapsed</span>
           </div>
         </div>
+      </div>
+
+      {/* Bottom fade for depth */}
+      <div className="absolute bottom-0 inset-x-0 h-20 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+    </div>
+  );
+}
+
+function MockWorkerRow({
+  name, role, status, model, memory, color,
+}: {
+  name: string; role: string; status: string;
+  model: string; memory: boolean; color: "blue" | "violet" | "green";
+}) {
+  const statusMap = {
+    running: { label: "Running", badge: "badge-green" },
+    idle:    { label: "Idle",    badge: "badge-muted" },
+    queued:  { label: "Queued",  badge: "badge-yellow" },
+  } as const;
+  const { label, badge } = statusMap[status as keyof typeof statusMap];
+  const iconCls = { blue: "bg-blue-600/20 text-blue-400", violet: "bg-violet-600/20 text-violet-400", green: "bg-green-600/20 text-green-400" }[color];
+
+  return (
+    <div className="rounded-lg border border-[#1a2035] bg-[#0d1120] p-3 space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${iconCls}`}>
+            <Bot className="w-3.5 h-3.5" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-white truncate leading-tight">{name}</p>
+            <p className="text-[10px] text-[#3a4455] truncate leading-tight">{role}</p>
+          </div>
+        </div>
+        <span className={`badge ${badge} shrink-0`} style={{ fontSize: "10px" }}>{label}</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <code className="text-[10px] font-mono text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20">
+          {model}
+        </code>
+        {memory && (
+          <span className="badge badge-cyan" style={{ fontSize: "10px" }}>
+            <Brain className="w-2.5 h-2.5" /> Mem
+          </span>
+        )}
       </div>
     </div>
   );
 }
 
-/* ── Data ───────────────────────────────────────────────────────────────── */
-const WORKERS = [
-  { icon: Search, label: "Research Agent", desc: "Deep multi-source research with citations and structured reports.", accent: { bg: "rgba(37,99,235,0.12)", icon: "#60a5fa" } },
-  { icon: FileText, label: "Content Agent", desc: "Blog posts, articles, and long-form copy optimised for readers.", accent: { bg: "rgba(6,182,212,0.12)", icon: "#22d3ee" } },
-  { icon: TrendingUp, label: "SEO Agent", desc: "Keyword research, on-page audits, and prioritised growth plans.", accent: { bg: "rgba(139,92,246,0.12)", icon: "#a78bfa" } },
-  { icon: Target, label: "Competitor Analyst", desc: "Market intelligence, positioning gaps, and competitive strategy.", accent: { bg: "rgba(34,197,94,0.12)", icon: "#4ade80" } },
-  { icon: Megaphone, label: "Marketing Agent", desc: "Campaigns, copy, and A/B-ready creative across all channels.", accent: { bg: "rgba(249,115,22,0.12)", icon: "#fb923c" } },
-  { icon: Settings2, label: "Automation Agent", desc: "Process analysis, workflow design, and automation roadmaps.", accent: { bg: "rgba(236,72,153,0.12)", icon: "#f472b6" } },
-];
-
-const STEPS = [
-  { n: "01", title: "Choose a template", desc: "Pick from 8 pre-built specialists or define your own role, goal, and instructions." },
-  { n: "02", title: "Write your task", desc: "Describe what you need in plain English. The worker figures out how to do it." },
-  { n: "03", title: "Watch it execute", desc: "Live-streaming logs show every step. Results delivered directly in the console." },
-];
-
-const WHY = [
-  { icon: Zap, title: "Real tool use", desc: "Workers use web search, multi-step reasoning, and tool calls — not just text generation." },
-  { icon: Brain, title: "Persistent memory", desc: "Workers remember context across tasks and learn about your business over time." },
-  { icon: Bot, title: "Defined specialists", desc: "Each worker has a role, goal, and skill set. Not a blank-slate assistant." },
-  { icon: Layers, title: "Full observability", desc: "Every reasoning step and tool call streamed live. No black box." },
-];
+function MockLogLine({ type, tool, text }: { type: string; tool: string | null; text: string }) {
+  if (type === "tool_start") return (
+    <div className="exec-line">
+      <span className="log-sys shrink-0">▶</span>
+      <span className="log-tool">{tool}</span>
+      <span className="log-sys text-[10px] truncate">{text.replace(tool ?? "", "").trim()}</span>
+    </div>
+  );
+  if (type === "tool_end") return (
+    <div className="exec-line">
+      <span className="log-sys shrink-0">✓</span>
+      <span className="log-done">{tool} complete</span>
+    </div>
+  );
+  return (
+    <div className="exec-line">
+      <span className="log-sys shrink-0">·</span>
+      <span className="log-out">{text}</span>
+    </div>
+  );
+}

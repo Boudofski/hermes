@@ -1,145 +1,189 @@
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
-import { agents, workspaces } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { agents, tasks, workspaces } from "@/lib/db/schema";
+import { eq, count } from "drizzle-orm";
 import Link from "next/link";
-import { Bot, Plus, Pencil, Zap } from "lucide-react";
+import { Bot, Plus, Pencil, Zap, Brain, Layers, IterationCcw } from "lucide-react";
 
 export const metadata = { title: "AI Workers — RZG AI" };
 
-const ACCENT_COLORS = [
-  "#3b82f6", "#06b6d4", "#8b5cf6", "#22c55e", "#f59e0b", "#ec4899",
+const ACCENT_CLASSES = [
+  "accent-blue",
+  "accent-cyan",
+  "accent-violet",
+  "accent-green",
+  "accent-amber",
+  "accent-pink",
 ];
+
+const ACCENT_COLORS = ["#3b82f6", "#06b6d4", "#8b5cf6", "#22c55e", "#f59e0b", "#ec4899"];
 
 export default async function AgentsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const [workspace] = await db
-    .select()
-    .from(workspaces)
-    .where(eq(workspaces.ownerId, user!.id))
-    .limit(1);
+  const [workspace] = await db.select().from(workspaces).where(eq(workspaces.ownerId, user!.id)).limit(1);
 
-  const agentList = await db
-    .select()
-    .from(agents)
-    .where(eq(agents.workspaceId, workspace.id));
+  const [agentList, taskCounts] = await Promise.all([
+    db.select().from(agents).where(eq(agents.workspaceId, workspace.id)),
+    db
+      .select({ agentId: tasks.agentId, taskCount: count() })
+      .from(tasks)
+      .where(eq(tasks.workspaceId, workspace.id))
+      .groupBy(tasks.agentId),
+  ]);
+
+  const taskCountMap = Object.fromEntries(taskCounts.map((r) => [r.agentId, r.taskCount]));
 
   return (
-    <div className="p-8 max-w-5xl space-y-8">
-      {/* Header */}
-      <div className="flex items-end justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "#2d4a8a" }}>
-            Workforce
-          </p>
-          <h1 className="text-2xl font-bold text-white">AI Workers</h1>
-          <p className="text-sm mt-0.5" style={{ color: "#4a5568" }}>
-            {agentList.length} worker{agentList.length !== 1 ? "s" : ""} deployed
-          </p>
-        </div>
-        <Link
-          href="/dashboard/agents/new"
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all"
-          style={{ background: "#1d4ed8" }}
-        >
-          <Plus className="w-4 h-4" />
-          New Worker
-        </Link>
-      </div>
-
-      {agentList.length === 0 ? (
-        <div className="rounded-xl p-14 text-center" style={{ background: "#0b0e18", border: "1px solid #1e2640" }}>
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4"
-            style={{ background: "rgba(37,99,235,0.1)", border: "1px solid rgba(37,99,235,0.2)" }}>
-            <Bot className="w-6 h-6" style={{ color: "#3b82f6" }} />
+    <div className="h-full flex flex-col">
+      {/* Page header */}
+      <div className="px-8 py-6 border-b border-border">
+        <p className="text-xs font-semibold uppercase tracking-widest text-blue-400/70 mb-1">Workforce</p>
+        <div className="flex items-end justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">AI Workers</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {agentList.length} worker{agentList.length !== 1 ? "s" : ""} deployed
+            </p>
           </div>
-          <p className="text-sm font-semibold text-white mb-1">No AI workers yet</p>
-          <p className="text-xs mb-5" style={{ color: "#4a5568", maxWidth: 280, margin: "4px auto 20px" }}>
-            Create your first autonomous AI worker to start automating tasks.
-          </p>
           <Link
             href="/dashboard/agents/new"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white"
-            style={{ background: "#1d4ed8" }}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl transition-colors"
           >
             <Plus className="w-4 h-4" />
-            Create AI Worker
+            New Worker
           </Link>
         </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {agentList.map((agent, i) => {
-            const accent = ACCENT_COLORS[i % ACCENT_COLORS.length];
-            return (
-              <div
-                key={agent.id}
-                className="rounded-xl overflow-hidden flex flex-col"
-                style={{ background: "#0b0e18", border: "1px solid #1e2640" }}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-8">
+        {agentList.length === 0 ? (
+          <div className="max-w-md mx-auto mt-16 text-center">
+            <div className="panel rounded-2xl p-12 space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mx-auto">
+                <Bot className="w-7 h-7 text-blue-400" />
+              </div>
+              <div>
+                <p className="font-semibold">No AI workers yet</p>
+                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                  Create your first autonomous AI worker from a template or from scratch.
+                </p>
+              </div>
+              <Link
+                href="/dashboard/agents/new"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl transition-colors"
               >
-                {/* Accent strip */}
-                <div className="h-0.5 w-full" style={{ background: accent }} />
+                <Plus className="w-4 h-4" />
+                Create AI Worker
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 max-w-6xl">
+            {agentList.map((agent, i) => {
+              const accentClass = ACCENT_CLASSES[i % ACCENT_CLASSES.length];
+              const accentColor = ACCENT_COLORS[i % ACCENT_COLORS.length];
+              const taskCount = taskCountMap[agent.id] ?? 0;
 
-                <div className="p-5 flex-1 flex flex-col gap-4">
-                  {/* Identity */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                        style={{ background: `${accent}18`, border: `1px solid ${accent}30` }}>
-                        <Bot className="w-4.5 h-4.5" style={{ color: accent }} />
+              return (
+                <div key={agent.id} className={`worker-card flex flex-col ${accentClass}`}>
+                  <div className="p-5 flex-1 flex flex-col gap-4">
+                    {/* Identity row */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                          style={{ background: `${accentColor}15`, border: `1px solid ${accentColor}28` }}
+                        >
+                          <Bot className="w-5 h-5" style={{ color: accentColor }} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold truncate">{agent.name}</p>
+                          <p className="text-xs text-muted-foreground truncate mt-0.5">{agent.role}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold text-white leading-tight">{agent.name}</p>
-                        <p className="text-xs mt-0.5" style={{ color: "#4a5568" }}>{agent.role}</p>
-                      </div>
+                      <span className={agent.isActive ? "badge badge-green shrink-0" : "badge badge-muted shrink-0"}>
+                        {agent.isActive ? "Active" : "Inactive"}
+                      </span>
                     </div>
-                    <span
-                      className="px-2 py-0.5 rounded-full text-xs font-medium shrink-0"
-                      style={agent.isActive
-                        ? { background: "rgba(34,197,94,0.1)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.2)" }
-                        : { background: "rgba(74,85,104,0.1)", color: "#4a5568", border: "1px solid rgba(74,85,104,0.2)" }
-                      }
-                    >
-                      {agent.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </div>
 
-                  {/* Goal */}
-                  <p className="text-xs leading-relaxed line-clamp-2" style={{ color: "#4a5568" }}>
-                    {agent.goal}
-                  </p>
+                    {/* Goal */}
+                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 flex-1">
+                      {agent.goal}
+                    </p>
 
-                  {/* Footer */}
-                  <div className="flex items-center justify-between pt-3 mt-auto" style={{ borderTop: "1px solid #151c2c" }}>
-                    <code className="text-xs px-2 py-0.5 rounded" style={{ background: "#0d1120", color: "#3b82f6", border: "1px solid #1e2640" }}>
-                      {agent.model.split("/").pop()}
-                    </code>
-                    <div className="flex items-center gap-3">
-                      <Link
-                        href={`/dashboard/agents/${agent.id}`}
-                        className="flex items-center gap-1 text-xs transition-colors"
-                        style={{ color: "#3a4455" }}
-                      >
-                        <Pencil className="w-3 h-3" />
-                        Edit
-                      </Link>
-                      <Link
-                        href={`/dashboard/tasks?agentId=${agent.id}`}
-                        className="flex items-center gap-1 text-xs font-medium transition-colors"
-                        style={{ color: accent }}
-                      >
-                        <Zap className="w-3 h-3" />
-                        Run Task
-                      </Link>
+                    {/* Stats row */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <StatChip
+                        icon={<Layers className="w-3 h-3" />}
+                        label="Tasks"
+                        value={String(taskCount)}
+                      />
+                      <StatChip
+                        icon={<Brain className="w-3 h-3" />}
+                        label="Memory"
+                        value={agent.memoryEnabled ? "On" : "Off"}
+                        active={agent.memoryEnabled}
+                      />
+                      <StatChip
+                        icon={<IterationCcw className="w-3 h-3" />}
+                        label="Max iter"
+                        value={String(agent.maxIterations)}
+                      />
+                    </div>
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between pt-3 border-t border-border/60">
+                      <code className="text-xs px-2 py-0.5 rounded bg-white/4 border border-border text-blue-400 font-mono">
+                        {agent.model.split("/").pop()}
+                      </code>
+                      <div className="flex items-center gap-3">
+                        <Link
+                          href={`/dashboard/agents/${agent.id}`}
+                          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <Pencil className="w-3 h-3" />
+                          Edit
+                        </Link>
+                        <Link
+                          href={`/dashboard/tasks?agentId=${agent.id}`}
+                          className="flex items-center gap-1 text-xs font-medium transition-colors"
+                          style={{ color: accentColor }}
+                        >
+                          <Zap className="w-3 h-3" />
+                          Run Task
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StatChip({
+  icon,
+  label,
+  value,
+  active,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  active?: boolean;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-1 py-2 px-2 rounded-lg bg-white/3 border border-border/50">
+      <div className={`${active ? "text-cyan-400" : "text-muted-foreground"}`}>{icon}</div>
+      <span className="text-xs font-semibold tabular-nums">{value}</span>
+      <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wide">{label}</span>
     </div>
   );
 }
