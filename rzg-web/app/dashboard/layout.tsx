@@ -15,11 +15,11 @@ export default async function DashboardLayout({
   if (!user) redirect("/login");
 
   return (
-    <div className="rzg-root flex min-h-screen overflow-hidden">
+    <div className="rzg-root flex min-h-screen w-full overflow-x-hidden">
       <Sidebar />
-      <main className="relative flex-1 overflow-y-auto">
+      <main className="relative min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
         <div className="rzg-grid-fine pointer-events-none absolute inset-0 opacity-35" />
-        <div className="relative min-h-screen">{children}</div>
+        <div className="relative min-h-screen min-w-0 max-w-full">{children}</div>
       </main>
     </div>
   );

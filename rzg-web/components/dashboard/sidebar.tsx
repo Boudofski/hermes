@@ -29,7 +29,7 @@ export function Sidebar() {
 
   return (
     <>
-    <aside className="sticky top-0 z-30 hidden h-screen w-72 shrink-0 flex-col border-r border-white/10 bg-[#030712]/90 p-4 backdrop-blur-xl md:flex">
+    <aside className="sticky top-0 z-30 hidden h-screen w-64 shrink-0 flex-col border-r border-white/10 bg-[#030712]/90 p-4 backdrop-blur-xl xl:w-72 md:flex">
       <Link href="/dashboard" className="mb-6 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
         <div className="brand-mark h-11 w-11">
           <Bot className="h-5 w-5" />
@@ -73,7 +73,7 @@ export function Sidebar() {
         </button>
       </div>
     </aside>
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#030712]/95 px-2 py-2 backdrop-blur-xl md:hidden">
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#030712]/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl md:hidden">
       <nav className="grid grid-cols-4 gap-1">
         {NAV.map(({ href, label, icon: Icon, exact }) => {
           const active = isActive(href, exact);

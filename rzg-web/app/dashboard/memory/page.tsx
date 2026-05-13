@@ -33,15 +33,15 @@ export default async function MemoryPage() {
   ]);
 
   return (
-    <div className="min-h-screen pb-24 md:pb-0">
+    <div className="min-h-screen min-w-0 max-w-full pb-28 md:pb-0">
       <PageTitle
         eyebrow="Memory Vault"
         title="Persistent Knowledge"
         description="Store durable context for all workers or attach specific memories to individual AI employees."
       />
 
-      <div className="grid gap-6 p-5 sm:p-8 xl:grid-cols-[360px_1fr]">
-        <aside className="space-y-4">
+      <div className="grid min-w-0 gap-6 p-4 sm:p-6 lg:p-8 2xl:grid-cols-[minmax(260px,340px)_minmax(0,1fr)]">
+        <aside className="min-w-0 space-y-4">
           <div className="surface-card p-5">
             <div className="brand-mark mb-4 h-12 w-12"><Brain className="h-6 w-6" /></div>
             <h2 className="text-xl font-bold text-white">Memory layer</h2>

@@ -86,10 +86,10 @@ export function EditAgentForm({ agent }: { agent: Agent }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="min-w-0 space-y-5">
       <section className="surface-card p-5 sm:p-6">
         <h2 className="text-lg font-bold text-white">Identity</h2>
-        <div className="mt-5 grid gap-4">
+        <div className="mt-5 grid min-w-0 gap-4">
           <Field label="Worker Name" required>
             <input type="text" value={form.name} onChange={(e) => set("name", e.target.value)} required placeholder="Research Agent" className="input-premium" />
           </Field>
@@ -131,21 +131,21 @@ export function EditAgentForm({ agent }: { agent: Agent }) {
 
       {error && <div className="rounded-xl border border-red-300/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-100">{error}</div>}
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex min-w-0 flex-wrap items-center gap-3">
         <button type="submit" disabled={loading} className="button-primary">
           {loading ? "Saving..." : "Save Changes"}
         </button>
         <Link href="/dashboard/agents" className="button-secondary">Cancel</Link>
 
-        <div className="ml-auto">
+        <div className="min-w-0 sm:ml-auto">
           {!showDeleteConfirm ? (
             <button type="button" onClick={() => setShowDeleteConfirm(true)} className="button-danger">
               <Trash2 className="h-4 w-4" />
               Delete Worker
             </button>
           ) : (
-            <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-red-300/30 bg-red-500/10 p-2">
-              <span className="px-2 text-xs font-semibold text-red-100">Deletes this worker and its tasks.</span>
+            <div className="flex min-w-0 flex-wrap items-center gap-2 rounded-2xl border border-red-300/30 bg-red-500/10 p-2">
+              <span className="break-words px-2 text-xs font-semibold text-red-100">Deletes this worker and its tasks.</span>
               <button type="button" onClick={handleDelete} disabled={deleting} className="button-danger px-3 py-2 text-xs">
                 {deleting ? "Deleting..." : "Confirm"}
               </button>

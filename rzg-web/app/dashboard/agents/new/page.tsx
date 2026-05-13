@@ -113,21 +113,21 @@ export default function NewAgentPage() {
   }
 
   return (
-    <div className="min-h-screen pb-24 md:pb-0">
-      <div className="border-b border-white/10 px-5 py-6 sm:px-8">
+    <div className="min-h-screen min-w-0 max-w-full pb-28 md:pb-0">
+      <div className="border-b border-white/10 px-4 py-6 sm:px-6 lg:px-8">
         <Link href="/dashboard/agents" className="button-secondary mb-5 px-3 py-2">
           <ArrowLeft className="h-4 w-4" />
           Directory
         </Link>
         <p className="eyebrow">Hire AI Employee</p>
         <h1 className="mt-2 text-3xl font-black tracking-tight text-white">New AI Worker</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
+        <p className="mt-2 max-w-2xl break-words text-sm leading-6 text-slate-300">
           Define the worker role, operating objective, model, and memory behavior used for future missions.
         </p>
       </div>
 
-      <div className="grid gap-6 p-5 sm:p-8 xl:grid-cols-[360px_1fr]">
-        <aside className="space-y-4">
+      <div className="grid min-w-0 gap-6 p-4 sm:p-6 lg:p-8 2xl:grid-cols-[minmax(260px,340px)_minmax(0,1fr)]">
+        <aside className="min-w-0 space-y-4">
           <div className="surface-card p-5">
             <div className="brand-mark mb-4 h-12 w-12"><Bot className="h-6 w-6" /></div>
             <h2 className="text-xl font-bold text-white">Worker setup protocol</h2>
@@ -143,10 +143,10 @@ export default function NewAgentPage() {
           </div>
         </aside>
 
-        <main className="space-y-6">
+        <main className="min-w-0 space-y-6">
           <section>
             <p className="label-premium mb-3">Start from a template</p>
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {AGENT_TEMPLATES.map((t) => {
                 const Icon = ICON_MAP[t.icon] ?? Bot;
                 const active = selectedTemplateId === t.id;
@@ -158,21 +158,21 @@ export default function NewAgentPage() {
                     className={`rounded-2xl border p-4 text-left transition ${active ? "border-cyan-300/50 bg-cyan-300/10" : "border-white/10 bg-white/[0.04] hover:border-cyan-300/30 hover:bg-cyan-300/10"}`}
                   >
                     <Icon className="mb-3 h-5 w-5 text-cyan-100" />
-                    <p className="font-bold text-white">{t.name.replace(" Agent", "")}</p>
-                    <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-400">{t.description}</p>
+                    <p className="truncate font-bold text-white">{t.name.replace(" Agent", "")}</p>
+                    <p className="mt-1 line-clamp-2 break-words text-xs leading-5 text-slate-300">{t.description}</p>
                   </button>
                 );
               })}
             </div>
           </section>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="min-w-0 space-y-5">
             <section className="surface-card p-5 sm:p-6">
               <div className="mb-5 flex items-center gap-3">
                 <div className="brand-mark h-10 w-10"><Bot className="h-5 w-5" /></div>
                 <h2 className="text-lg font-bold text-white">Identity</h2>
               </div>
-              <div className="grid gap-4">
+              <div className="grid min-w-0 gap-4">
                 <Field label="Worker Name" required>
                   <input type="text" value={form.name} onChange={(e) => set("name", e.target.value)} required placeholder="Research Agent" className="input-premium" />
                 </Field>

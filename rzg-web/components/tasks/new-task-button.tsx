@@ -91,7 +91,7 @@ export function NewTaskButton({ agents, defaultAgentId }: { agents: Agent[]; def
 
               {error && <div className="rounded-xl border border-red-300/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-100">{error}</div>}
 
-              <div className="flex gap-3 pt-1">
+              <div className="flex flex-col gap-3 pt-1 sm:flex-row">
                 <button type="submit" disabled={loading} className="button-primary flex-1">
                   {loading ? "Creating..." : "Create Task"}
                 </button>

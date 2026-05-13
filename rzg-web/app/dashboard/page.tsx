@@ -44,7 +44,7 @@ export default async function DashboardPage() {
   const failedRuns = recentRuns.filter((r) => r.status === "failed").length;
 
   return (
-    <div className="min-h-screen pb-24 md:pb-0">
+    <div className="min-h-screen min-w-0 max-w-full pb-28 md:pb-0">
       <PageTitle
         eyebrow="Command Center"
         title="Operations Overview"
@@ -57,9 +57,9 @@ export default async function DashboardPage() {
         }
       />
 
-      <div className="grid gap-6 p-5 sm:p-8 xl:grid-cols-[1fr_360px]">
-        <section className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid min-w-0 gap-6 p-4 sm:p-6 lg:p-8 2xl:grid-cols-[minmax(0,1fr)_minmax(280px,360px)]">
+        <section className="min-w-0 space-y-6">
+          <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4">
             <MetricCard label="Total Workers" value={agentCount.count} icon={<Bot className="h-5 w-5" />} detail="AI employees deployed in this workspace." />
             <MetricCard label="Total Tasks" value={taskCount.count} icon={<ListTodo className="h-5 w-5" />} detail="Business missions assigned to workers." />
             <MetricCard label="Completed Runs" value={completedRuns} icon={<CheckCircle2 className="h-5 w-5" />} detail="Completed in the latest activity window." />
@@ -93,17 +93,19 @@ export default async function DashboardPage() {
                 />
               </div>
             ) : (
-              <div>
+              <div className="min-w-0">
                 {recentRuns.map((run) => (
                   <Link key={run.id} href={`/dashboard/tasks/${run.taskId}`} className="activity-row group">
+                    <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
                     <RunDot status={run.status} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-bold text-white group-hover:text-cyan-100">{run.taskName}</p>
-                      <p className="mt-1 truncate text-xs text-slate-400">{run.inputPrompt}</p>
+                      <p className="mt-1 truncate text-xs text-slate-300">{run.inputPrompt}</p>
                     </div>
-                    <div className="shrink-0 text-right">
+                    </div>
+                    <div className="flex w-full shrink-0 items-center justify-between gap-2 sm:w-auto sm:flex-col sm:items-end sm:text-right">
                       <StatusBadge status={run.status} />
-                      <p className="mt-2 text-xs font-medium text-slate-400">
+                      <p className="text-xs font-medium text-slate-300 sm:mt-2">
                         {run.startedAt ? new Date(run.startedAt).toLocaleDateString() : new Date(run.createdAt).toLocaleDateString()}
                       </p>
                     </div>
@@ -114,7 +116,7 @@ export default async function DashboardPage() {
           </div>
         </section>
 
-        <aside className="space-y-6">
+        <aside className="min-w-0 space-y-6">
           <div className="surface-card p-5">
             <p className="eyebrow">Quick Launch</p>
             <div className="mt-4 space-y-3">
@@ -142,11 +144,11 @@ export default async function DashboardPage() {
 
 function QuickLaunch({ href, icon, title, detail }: { href: string; icon: React.ReactNode; title: string; detail: string }) {
   return (
-    <Link href={href} className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-cyan-300/30 hover:bg-cyan-300/10">
+    <Link href={href} className="flex min-w-0 items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-cyan-300/30 hover:bg-cyan-300/10">
       <div className="brand-mark h-11 w-11 shrink-0">{icon}</div>
       <div className="min-w-0 flex-1">
-        <p className="font-bold text-white">{title}</p>
-        <p className="mt-1 text-xs leading-5 text-slate-400">{detail}</p>
+        <p className="truncate font-bold text-white">{title}</p>
+        <p className="mt-1 break-words text-xs leading-5 text-slate-300">{detail}</p>
       </div>
       <ArrowRight className="h-4 w-4 text-slate-400" />
     </Link>
@@ -155,8 +157,8 @@ function QuickLaunch({ href, icon, title, detail }: { href: string; icon: React.
 
 function SystemRow({ label, status, value }: { label: string; status: string; value?: number }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-3">
-      <span className="text-sm font-semibold text-slate-200">{label}</span>
+    <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-3">
+      <span className="min-w-0 break-words text-sm font-semibold text-slate-200">{label}</span>
       <div className="flex items-center gap-2">
         {typeof value === "number" && <span className="font-mono text-sm font-bold text-white">{value}</span>}
         <StatusBadge status={status} />

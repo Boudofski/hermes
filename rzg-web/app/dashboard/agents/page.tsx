@@ -30,7 +30,7 @@ export default async function AgentsPage() {
   const taskCountMap = Object.fromEntries(taskCounts.map((r) => [r.agentId, r.taskCount]));
 
   return (
-    <div className="min-h-screen pb-24 md:pb-0">
+    <div className="min-h-screen min-w-0 max-w-full pb-28 md:pb-0">
       <PageTitle
         eyebrow="AI Employee Directory"
         title="AI Workers"
@@ -38,7 +38,7 @@ export default async function AgentsPage() {
         action={<CommandButton href="/dashboard/agents/new"><Plus className="h-4 w-4" /> New Worker</CommandButton>}
       />
 
-      <div className="space-y-8 p-5 sm:p-8">
+      <div className="min-w-0 space-y-8 p-4 sm:p-6 lg:p-8">
         {agentList.length === 0 ? (
           <EmptyState
             icon={<Bot className="h-7 w-7" />}
@@ -47,7 +47,7 @@ export default async function AgentsPage() {
             action={<CommandButton href="/dashboard/agents/new"><Plus className="h-4 w-4" /> Create AI Worker</CommandButton>}
           />
         ) : (
-          <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+          <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
             {agentList.map((agent, index) => {
               const taskCount = taskCountMap[agent.id] ?? 0;
               const accent = [
@@ -59,7 +59,7 @@ export default async function AgentsPage() {
                 "bg-teal-300",
               ][index % 6];
               return (
-                <article key={agent.id} className="surface-card surface-card-hover group overflow-hidden">
+                <article key={agent.id} className="surface-card surface-card-hover group min-w-0 overflow-hidden">
                   <div className={`h-1 ${accent}`} />
                   <div className="p-5">
                     <div className="flex items-start justify-between gap-4">
@@ -84,11 +84,11 @@ export default async function AgentsPage() {
                       <WorkerStat icon={<BriefcaseBusiness className="h-4 w-4" />} label="Model" value={agent.model.split("/").pop() ?? agent.model} />
                     </div>
 
-                    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
-                      <code className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 font-mono text-xs font-bold text-cyan-100">
+                    <div className="mt-5 flex min-w-0 flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
+                      <code className="block max-w-full truncate rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 font-mono text-xs font-bold text-cyan-100">
                         {agent.model}
                       </code>
-                      <div className="flex items-center gap-2">
+                      <div className="flex min-w-0 flex-wrap items-center gap-2">
                         <Link href={`/dashboard/agents/${agent.id}`} className="button-secondary px-3 py-2">
                           <Pencil className="h-4 w-4" />
                           Edit
@@ -114,12 +114,12 @@ export default async function AgentsPage() {
               <h2 className="text-xl font-bold text-white">Start with a specialist profile</h2>
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {AGENT_TEMPLATES.slice(0, 8).map((template) => (
-              <Link key={template.id} href="/dashboard/agents/new" className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-cyan-300/30 hover:bg-cyan-300/10">
-                <p className="font-bold text-white">{template.name}</p>
-                <p className="mt-1 text-sm font-semibold text-cyan-100">{template.role}</p>
-                <p className="mt-3 line-clamp-2 text-xs leading-5 text-slate-400">{template.description}</p>
+              <Link key={template.id} href="/dashboard/agents/new" className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-cyan-300/30 hover:bg-cyan-300/10">
+                <p className="truncate font-bold text-white">{template.name}</p>
+                <p className="mt-1 truncate text-sm font-semibold text-cyan-100">{template.role}</p>
+                <p className="mt-3 line-clamp-2 break-words text-xs leading-5 text-slate-300">{template.description}</p>
               </Link>
             ))}
           </div>
@@ -131,7 +131,7 @@ export default async function AgentsPage() {
 
 function WorkerStat({ icon, label, value, active }: { icon: React.ReactNode; label: string; value: string; active?: boolean }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+    <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.035] p-3">
       <div className={active ? "text-cyan-100" : "text-slate-400"}>{icon}</div>
       <p className="mt-2 truncate font-mono text-sm font-black text-white">{value}</p>
       <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{label}</p>

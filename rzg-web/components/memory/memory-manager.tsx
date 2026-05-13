@@ -74,7 +74,7 @@ export function MemoryManager({ initialMemories, agents }: Props) {
   }
 
   return (
-    <main className="space-y-5">
+    <main className="min-w-0 max-w-full space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm font-semibold text-slate-300">
           {memoryList.length} memor{memoryList.length !== 1 ? "ies" : "y"} stored
@@ -119,7 +119,7 @@ export function MemoryManager({ initialMemories, agents }: Props) {
 
               {error && <div className="rounded-xl border border-red-300/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-100">{error}</div>}
 
-              <div className="flex gap-3 pt-1">
+              <div className="flex flex-col gap-3 pt-1 sm:flex-row">
                 <button type="submit" disabled={saving} className="button-primary flex-1">
                   {saving ? "Saving..." : "Save Memory"}
                 </button>
@@ -139,8 +139,8 @@ export function MemoryManager({ initialMemories, agents }: Props) {
           description="Add memories to give your AI workers persistent knowledge across future tasks."
         />
       ) : (
-        <div className="surface-panel overflow-hidden">
-          <div className="hidden border-b border-white/10 bg-white/[0.035] px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-400 lg:grid lg:grid-cols-[220px_1fr_190px_44px]">
+        <div className="surface-panel min-w-0 overflow-hidden">
+          <div className="hidden min-w-0 border-b border-white/10 bg-white/[0.035] px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-400 xl:grid xl:grid-cols-[minmax(120px,190px)_minmax(0,1fr)_minmax(120px,170px)_44px]">
             <span>Key</span>
             <span>Content</span>
             <span>Scope</span>
@@ -149,12 +149,12 @@ export function MemoryManager({ initialMemories, agents }: Props) {
           <div className="divide-y divide-white/10">
             {memoryList.map((m) => (
               <div key={m.id}>
-                <div onClick={() => setExpandedId(expandedId === m.id ? null : m.id)} className="grid w-full cursor-pointer gap-4 px-5 py-4 text-left transition hover:bg-cyan-300/[0.035] lg:grid-cols-[220px_1fr_190px_44px] lg:items-center">
-                  <code className="truncate rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 font-mono text-xs font-bold text-cyan-100">{m.key}</code>
-                  <span className="line-clamp-2 text-sm leading-6 text-slate-300">{m.content}</span>
-                  <span className="flex items-center gap-2 text-sm font-semibold text-slate-300">
-                    {m.agentName ? <UserRound className="h-4 w-4 text-cyan-200" /> : <Globe2 className="h-4 w-4 text-cyan-200" />}
-                    {m.agentName ?? "Global"}
+                <div onClick={() => setExpandedId(expandedId === m.id ? null : m.id)} className="grid w-full min-w-0 cursor-pointer gap-4 px-4 py-4 text-left transition hover:bg-cyan-300/[0.035] sm:px-5 xl:grid-cols-[minmax(120px,190px)_minmax(0,1fr)_minmax(120px,170px)_44px] xl:items-center">
+                  <code className="block max-w-full truncate rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 font-mono text-xs font-bold text-cyan-100">{m.key}</code>
+                  <span className="line-clamp-2 min-w-0 break-words text-sm leading-6 text-slate-300">{m.content}</span>
+                  <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-slate-300">
+                    {m.agentName ? <UserRound className="h-4 w-4 shrink-0 text-cyan-200" /> : <Globe2 className="h-4 w-4 shrink-0 text-cyan-200" />}
+                    <span className="min-w-0 truncate">{m.agentName ?? "Global"}</span>
                   </span>
                   <span className="flex justify-start lg:justify-end">
                     <button type="button" onClick={(e) => { e.stopPropagation(); handleDelete(m.id); }} disabled={deleting === m.id} className="button-secondary px-2.5 py-2" title="Delete memory">
@@ -165,8 +165,8 @@ export function MemoryManager({ initialMemories, agents }: Props) {
 
                 {expandedId === m.id && (
                   <div className="border-t border-white/10 bg-white/[0.025] px-5 py-4">
-                    <p className="whitespace-pre-wrap text-sm leading-7 text-white">{m.content}</p>
-                    <p className="mt-3 text-xs font-semibold text-slate-400">
+                    <p className="whitespace-pre-wrap break-words text-sm leading-7 text-white">{m.content}</p>
+                    <p className="mt-3 break-words text-xs font-semibold text-slate-300">
                       {m.agentName ? `Assigned to ${m.agentName}` : "Global memory available to all workers"}
                       {m.createdAt && ` · ${new Date(m.createdAt).toLocaleString()}`}
                     </p>

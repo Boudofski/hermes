@@ -141,24 +141,24 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
   const toolEvents = logs.filter((l) => l.type === "tool_start" || l.type === "tool_end");
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 max-w-full space-y-4 overflow-hidden">
       {/* ── Execution console header ── */}
-      <div className="console-shell">
+      <div className="console-shell min-w-0">
         {/* Console title bar */}
         <div className="console-header">
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
               <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
               <div className="w-3 h-3 rounded-full bg-[#28c840]" />
             </div>
-            <div className="ml-2 flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1">
-              <Terminal className="h-3 w-3 text-cyan-200" />
-              <span className="font-mono text-xs text-slate-300">agent-execution</span>
+            <div className="ml-0 flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 sm:ml-2">
+              <Terminal className="h-3 w-3 shrink-0 text-cyan-200" />
+              <span className="min-w-0 truncate font-mono text-xs text-slate-300">agent-execution</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-3">
             {running && (
               <div className="flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse-dot" />
@@ -226,7 +226,7 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
 
         {/* Log lines */}
         {(logs.length > 0 || running) && (
-          <div className="console-body max-h-96 space-y-1 overflow-y-auto p-4">
+          <div className="console-body max-h-96 max-w-full space-y-1 overflow-x-auto overflow-y-auto p-4">
             {logs.map((log, i) => (
               <LogLine key={i} log={log} />
             ))}
@@ -274,7 +274,7 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
             <span className="eyebrow">Final Output</span>
           </div>
           <div className="p-5">
-            <pre className="whitespace-pre-wrap font-sans text-sm leading-7 text-slate-100">{finalResponse}</pre>
+            <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-7 text-slate-100">{finalResponse}</pre>
           </div>
         </div>
       )}
@@ -317,16 +317,16 @@ function RunHistory({ runs }: { runs: HistoryRun[] }) {
               <button
                 type="button"
                 onClick={() => setExpandedRun(expandedRun === run.id ? null : run.id)}
-                className="w-full flex items-center gap-3 text-left"
+                className="flex w-full min-w-0 flex-col gap-3 text-left sm:flex-row sm:items-center"
               >
                 <HistoryDot status={run.status} />
                 <div className="flex-1 min-w-0">
                   <span className="text-sm font-bold text-white">Run #{runs.length - i}</span>
-                  <span className="ml-2 text-xs font-medium text-slate-400">
+                  <span className="ml-0 block break-words text-xs font-medium text-slate-300 sm:ml-2 sm:inline">
                     {run.createdAt ? new Date(run.createdAt).toLocaleString() : "—"}
                   </span>
                 </div>
-                <span className={historyBadgeClass(run.status)}>{run.status}</span>
+                <span className={`${historyBadgeClass(run.status)} self-start sm:self-auto`}>{run.status}</span>
                 {(run.finalResponse || run.errorMessage) && (
                   expandedRun === run.id
                     ? <ChevronUp className="w-3.5 h-3.5 shrink-0 text-muted-foreground/40" />
@@ -335,16 +335,16 @@ function RunHistory({ runs }: { runs: HistoryRun[] }) {
               </button>
 
               {expandedRun === run.id && run.finalResponse && (
-                <div className="ml-5 rounded-xl border border-white/10 bg-slate-950/60 p-3">
-                  <pre className="line-clamp-10 whitespace-pre-wrap font-sans text-xs leading-6 text-slate-300">
+                <div className="rounded-xl border border-white/10 bg-slate-950/60 p-3 sm:ml-5">
+                  <pre className="line-clamp-10 whitespace-pre-wrap break-words font-sans text-xs leading-6 text-slate-300">
                     {run.finalResponse}
                   </pre>
                 </div>
               )}
 
               {expandedRun === run.id && run.errorMessage && (
-                <div className="ml-5 rounded-xl border border-red-300/30 bg-red-500/10 p-3">
-                  <p className="text-xs text-red-100">{run.errorMessage}</p>
+                <div className="rounded-xl border border-red-300/30 bg-red-500/10 p-3 sm:ml-5">
+                  <p className="break-words text-xs text-red-100">{run.errorMessage}</p>
                 </div>
               )}
             </div>
@@ -382,8 +382,8 @@ function LogLine({ log }: { log: { type: string; content: string; toolName?: str
     return (
       <div className="exec-line log-tool">
         <span className="log-sys shrink-0">▶</span>
-        <span>{log.toolName ?? log.content}</span>
-        <span className="log-sys text-xs">starting…</span>
+        <span className="break-words">{log.toolName ?? log.content}</span>
+        <span className="log-sys text-xs">starting...</span>
       </div>
     );
   }
@@ -391,17 +391,17 @@ function LogLine({ log }: { log: { type: string; content: string; toolName?: str
     return (
       <div className="exec-line log-done">
         <span className="log-sys shrink-0">✓</span>
-        <span>{log.toolName ?? log.content}</span>
+        <span className="break-words">{log.toolName ?? log.content}</span>
       </div>
     );
   }
   if (log.type === "text_delta") {
-    return <div className="leading-relaxed log-out">{log.content}</div>;
+    return <div className="break-words leading-relaxed log-out">{log.content}</div>;
   }
   return (
     <div className="exec-line log-sys">
       <span className="text-blue-400/40 shrink-0">•</span>
-      <span>{log.content}</span>
+      <span className="break-words">{log.content}</span>
     </div>
   );
 }

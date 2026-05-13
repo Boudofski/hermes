@@ -53,17 +53,17 @@ export default async function TaskDetailPage({ params }: Params) {
     : [];
 
   return (
-    <div className="min-h-screen pb-24 md:pb-0">
-      <div className="border-b border-white/10 bg-[#02050b]/70 px-5 py-5 backdrop-blur-xl sm:px-8">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <div className="flex min-w-0 items-center gap-4">
+    <div className="min-h-screen min-w-0 max-w-full pb-28 md:pb-0">
+      <div className="border-b border-white/10 bg-[#02050b]/70 px-4 py-5 backdrop-blur-xl sm:px-6 lg:px-8">
+        <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex min-w-0 items-start gap-4 sm:items-center">
             <Link href="/dashboard/tasks" className="button-secondary px-3 py-2">
             <ArrowLeft className="w-4 h-4" />
             </Link>
             <div className="min-w-0">
               <p className="eyebrow">Mission Detail</p>
-              <div className="mt-1 flex flex-wrap items-center gap-3">
-                <h1 className="truncate text-2xl font-black tracking-tight text-white">{task.name}</h1>
+              <div className="mt-1 flex min-w-0 flex-wrap items-center gap-3">
+                <h1 className="min-w-0 break-words text-2xl font-black tracking-tight text-white sm:truncate">{task.name}</h1>
                 <span className={`badge ${task.status === "completed" ? "badge-green" : task.status === "running" ? "badge-yellow" : task.status === "failed" ? "badge-red" : "badge-muted"}`}>
                   {task.status}
                 </span>
@@ -84,14 +84,14 @@ export default async function TaskDetailPage({ params }: Params) {
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl space-y-5 p-5 sm:p-8">
-        <div className="surface-card overflow-hidden">
+      <div className="mx-auto min-w-0 max-w-6xl space-y-5 p-4 sm:p-6 lg:p-8">
+        <div className="surface-card min-w-0 overflow-hidden">
           <div className="flex items-center gap-2 border-b border-white/10 px-5 py-4">
             <FileText className="h-4 w-4 text-cyan-200" />
             <span className="eyebrow">Prompt Panel</span>
           </div>
           <div className="p-5">
-            <p className="whitespace-pre-wrap text-sm leading-7 text-slate-100">{task.prompt}</p>
+            <p className="whitespace-pre-wrap break-words text-sm leading-7 text-slate-100">{task.prompt}</p>
           </div>
         </div>
 
