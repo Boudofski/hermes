@@ -3,8 +3,18 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Bot, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  ArrowLeft, Bot, ChevronDown, ChevronUp,
+  Microscope, PenLine, TrendingUp, Target,
+  Megaphone, Smartphone, ClipboardList, Settings2,
+  type LucideIcon,
+} from "lucide-react";
 import { AGENT_TEMPLATES, type AgentTemplate } from "@/lib/agent-templates";
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  Microscope, PenLine, TrendingUp, Target,
+  Megaphone, Smartphone, ClipboardList, Settings2,
+};
 
 const MODELS = [
   { value: "openai/gpt-4o-mini", label: "GPT-4o Mini — fast, cheap" },
@@ -59,7 +69,7 @@ export default function NewAgentPage() {
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
     if (key !== "name" && key !== "model" && key !== "memoryEnabled" && key !== "maxIterations") {
-      setSelectedTemplateId(null); // mark as customised
+      setSelectedTemplateId(null);
     }
   }
 
@@ -87,50 +97,59 @@ export default function NewAgentPage() {
   }
 
   return (
-    <div className="p-6 max-w-2xl space-y-6">
+    <div className="p-6 max-w-2xl space-y-8">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link
           href="/dashboard/agents"
-          className="text-muted-foreground hover:text-foreground transition-colors"
+          className="w-8 h-8 rounded-lg border border-white/10 hover:border-white/20 hover:bg-white/5 flex items-center justify-center transition-all text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="w-4 h-4" />
         </Link>
-        <h1 className="text-xl font-semibold">New AI Worker</h1>
+        <div>
+          <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Create</p>
+          <h1 className="text-xl font-bold leading-tight">New AI Worker</h1>
+        </div>
       </div>
 
       {/* Template picker */}
       <div>
-        <p className="text-xs font-medium text-muted-foreground mb-3">
-          Start from a template — or fill in the form below
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">
+          Start from a template
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {AGENT_TEMPLATES.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => applyTemplate(t)}
-              title={t.description}
-              className={`flex flex-col items-start gap-1 px-3 py-2.5 border rounded-lg text-left transition-all ${
-                selectedTemplateId === t.id
-                  ? "border-blue-500 bg-blue-500/10 text-blue-400"
-                  : "border-border hover:border-blue-500/50 hover:bg-blue-500/5"
-              }`}
-            >
-              <span className="text-lg">{t.icon}</span>
-              <span className="text-xs font-medium leading-tight">{t.name}</span>
-            </button>
-          ))}
+          {AGENT_TEMPLATES.map((t) => {
+            const Icon = ICON_MAP[t.icon] ?? Bot;
+            const active = selectedTemplateId === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => applyTemplate(t)}
+                title={t.description}
+                className={`flex flex-col items-start gap-2 px-3 py-3 border rounded-xl text-left transition-all ${
+                  active
+                    ? "border-blue-500 bg-blue-500/10 text-blue-400"
+                    : "border-white/8 hover:border-blue-500/40 hover:bg-blue-500/5 text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                <span className="text-xs font-medium leading-tight">{t.name.replace(" Agent", "")}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Identity */}
-        <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-          <div className="flex items-center gap-2">
-            <Bot className="w-4 h-4 text-blue-400" />
-            <span className="text-sm font-medium">Identity</span>
+        <div className="glass rounded-2xl p-5 space-y-4">
+          <div className="flex items-center gap-2 pb-1">
+            <div className="w-6 h-6 rounded-lg bg-blue-500/10 flex items-center justify-center">
+              <Bot className="w-3.5 h-3.5 text-blue-400" />
+            </div>
+            <span className="text-sm font-semibold">Identity</span>
           </div>
 
           <Field label="Worker Name" required>
@@ -193,8 +212,8 @@ export default function NewAgentPage() {
         </div>
 
         {/* Model & settings */}
-        <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-          <span className="text-sm font-medium">Model & Settings</span>
+        <div className="glass rounded-2xl p-5 space-y-4">
+          <span className="text-sm font-semibold">Model & Settings</span>
 
           <Field label="Model">
             <select
@@ -230,22 +249,22 @@ export default function NewAgentPage() {
         </div>
 
         {error && (
-          <p className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg px-4 py-2">
-            {error}
-          </p>
+          <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+            <p className="text-sm text-red-400">{error}</p>
+          </div>
         )}
 
         <div className="flex gap-3">
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium rounded-lg transition-colors text-sm"
+            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium rounded-xl transition-all text-sm"
           >
             {loading ? "Creating…" : "Create AI Worker"}
           </button>
           <Link
             href="/dashboard/agents"
-            className="px-5 py-2.5 border border-border rounded-lg text-sm hover:bg-secondary transition-colors"
+            className="px-5 py-2.5 border border-white/10 hover:border-white/20 rounded-xl text-sm hover:bg-white/5 transition-all"
           >
             Cancel
           </Link>
@@ -256,13 +275,10 @@ export default function NewAgentPage() {
 }
 
 const INPUT_CLS =
-  "w-full px-3 py-2 bg-background border border-border rounded-lg text-sm outline-none focus:border-blue-500 transition-colors font-sans";
+  "w-full px-3.5 py-2.5 bg-white/4 border border-white/8 hover:border-white/15 focus:border-blue-500 rounded-xl text-sm outline-none transition-colors font-sans placeholder:text-muted-foreground/50";
 
 function Field({
-  label,
-  children,
-  required,
-  hint,
+  label, children, required, hint,
 }: {
   label: string;
   children: React.ReactNode;
@@ -270,22 +286,18 @@ function Field({
   hint?: string;
 }) {
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       <label className="text-xs font-medium text-muted-foreground">
-        {label}{" "}
-        {required && <span className="text-destructive">*</span>}
+        {label}{required && <span className="text-red-400 ml-0.5">*</span>}
       </label>
       {children}
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+      {hint && <p className="text-xs text-muted-foreground/70">{hint}</p>}
     </div>
   );
 }
 
 function Toggle({
-  enabled,
-  onToggle,
-  label,
-  hint,
+  enabled, onToggle, label, hint,
 }: {
   enabled: boolean;
   onToggle: () => void;
@@ -300,7 +312,7 @@ function Toggle({
     >
       <div
         className={`w-10 h-5 rounded-full transition-colors relative shrink-0 ${
-          enabled ? "bg-blue-600" : "bg-secondary"
+          enabled ? "bg-blue-600" : "bg-white/10"
         }`}
       >
         <span
@@ -311,7 +323,7 @@ function Toggle({
       </div>
       <div>
         <span className="text-sm font-medium">{label}</span>
-        {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+        {hint && <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>}
       </div>
     </button>
   );

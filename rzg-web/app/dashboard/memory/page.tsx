@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { Brain } from "lucide-react";
 import { MemoryManager } from "@/components/memory/memory-manager";
 
-export const metadata = { title: "Memory" };
+export const metadata = { title: "Memory — RZG AI" };
 
 export default async function MemoryPage() {
   const supabase = await createClient();
@@ -35,13 +35,16 @@ export default async function MemoryPage() {
   ]);
 
   return (
-    <div className="p-6 space-y-6 max-w-4xl">
-      <div className="flex items-center gap-3">
-        <Brain className="w-5 h-5 text-blue-400" />
-        <div>
-          <h1 className="text-xl font-semibold">Memory</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Persistent knowledge for your AI workers</p>
+    <div className="p-6 space-y-8 max-w-4xl">
+      <div>
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-8 h-8 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+            <Brain className="w-4 h-4 text-cyan-400" />
+          </div>
+          <p className="text-xs font-medium text-cyan-400 uppercase tracking-widest">Knowledge Base</p>
         </div>
+        <h1 className="text-2xl font-bold">Memory</h1>
+        <p className="text-muted-foreground text-sm mt-1">Persistent knowledge for your AI workers</p>
       </div>
 
       <MemoryManager

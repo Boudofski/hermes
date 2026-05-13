@@ -26,7 +26,7 @@ export function TaskActions({ taskId }: { taskId: string }) {
       <button
         type="button"
         onClick={() => setConfirm(true)}
-        className="flex items-center gap-1.5 px-3 py-1.5 border border-border text-muted-foreground hover:border-destructive/50 hover:text-destructive rounded-lg text-xs transition-colors"
+        className="flex items-center gap-1.5 px-3 py-1.5 border border-white/10 hover:border-red-500/30 text-muted-foreground hover:text-red-400 rounded-lg text-xs transition-all"
       >
         <Trash2 className="w-3.5 h-3.5" />
         Delete
@@ -41,14 +41,14 @@ export function TaskActions({ taskId }: { taskId: string }) {
         type="button"
         onClick={handleDelete}
         disabled={deleting}
-        className="px-3 py-1.5 bg-destructive hover:bg-destructive/80 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors"
+        className="px-3 py-1.5 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors"
       >
         {deleting ? "Deleting…" : "Yes"}
       </button>
       <button
         type="button"
         onClick={() => setConfirm(false)}
-        className="px-3 py-1.5 border border-border rounded-lg text-xs hover:bg-secondary transition-colors"
+        className="px-3 py-1.5 border border-white/10 rounded-lg text-xs hover:bg-white/5 transition-all"
       >
         Cancel
       </button>

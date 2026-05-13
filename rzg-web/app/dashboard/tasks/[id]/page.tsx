@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { tasks, taskRuns, taskLogs, agents, workspaces } from "@/lib/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Bot } from "lucide-react";
 import Link from "next/link";
 import { TaskRunner } from "@/components/tasks/task-runner";
 import { TaskActions } from "@/components/tasks/task-actions";
@@ -12,7 +12,7 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Params) {
   const { id } = await params;
-  return { title: `Task ${id.slice(0, 8)}` };
+  return { title: `Task — RZG AI` };
 }
 
 export default async function TaskDetailPage({ params }: Params) {
@@ -54,24 +54,35 @@ export default async function TaskDetailPage({ params }: Params) {
 
   return (
     <div className="p-6 space-y-6 max-w-4xl">
+      {/* Header */}
       <div className="flex items-center gap-3">
-        <Link href="/dashboard/tasks" className="text-muted-foreground hover:text-foreground transition-colors">
+        <Link
+          href="/dashboard/tasks"
+          className="w-8 h-8 rounded-lg border border-white/10 hover:border-white/20 hover:bg-white/5 flex items-center justify-center transition-all text-muted-foreground hover:text-foreground shrink-0"
+        >
           <ArrowLeft className="w-4 h-4" />
         </Link>
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-semibold">{task.name}</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Worker: {agent?.name ?? "Unknown"}</p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold truncate">{task.name}</h1>
+          </div>
+          {agent && (
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <Bot className="w-3 h-3 text-blue-400" />
+              <p className="text-xs text-muted-foreground">{agent.name}</p>
+            </div>
+          )}
         </div>
         <TaskActions taskId={task.id} />
       </div>
 
       {/* Prompt */}
-      <div className="bg-card border border-border rounded-xl p-4 space-y-1">
-        <p className="text-xs font-medium text-muted-foreground">Prompt</p>
-        <p className="text-sm">{task.prompt}</p>
+      <div className="glass rounded-2xl p-4 space-y-1.5">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Prompt</p>
+        <p className="text-sm leading-relaxed">{task.prompt}</p>
       </div>
 
-      {/* Runner — handles run button, live SSE logs, output */}
+      {/* Runner */}
       <TaskRunner
         task={{ id: task.id, name: task.name, status: task.status }}
         agent={agent ? { id: agent.id, name: agent.name } : null}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Bot, ArrowRight } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -39,17 +40,27 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-background bg-grid flex items-center justify-center px-4">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="text-center space-y-1">
-          <Link href="/" className="text-2xl font-bold text-blue-400">RZG AI</Link>
+      <div className="absolute inset-0 bg-gradient-to-b from-blue-600/5 via-transparent to-transparent pointer-events-none" />
+
+      <div className="w-full max-w-sm relative">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-flex items-center gap-2 mb-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center">
+              <Bot className="w-5 h-5 text-white" />
+            </div>
+            <span className="font-bold text-xl">RZG <span className="text-blue-400">AI</span></span>
+          </Link>
           <p className="text-muted-foreground text-sm">Sign in to your workspace</p>
         </div>
 
-        <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+        {/* Card */}
+        <div className="glass rounded-2xl p-6 space-y-4">
+          {/* Google */}
           <button
             type="button"
             onClick={handleGoogle}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-border rounded-lg hover:bg-secondary transition-colors text-sm font-medium"
+            className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 border border-white/10 hover:border-white/20 hover:bg-white/5 rounded-xl transition-all text-sm font-medium"
           >
             <GoogleIcon />
             Continue with Google
@@ -57,53 +68,61 @@ export default function LoginPage() {
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
+              <div className="w-full border-t border-white/8" />
             </div>
             <div className="relative flex justify-center text-xs text-muted-foreground">
-              <span className="bg-card px-2">or</span>
+              <span className="bg-background px-2">or continue with email</span>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm outline-none focus:border-blue-500 transition-colors"
+                autoComplete="email"
+                className="w-full px-3.5 py-2.5 bg-white/4 border border-white/8 hover:border-white/15 focus:border-blue-500 rounded-xl text-sm outline-none transition-colors placeholder:text-muted-foreground/50"
                 placeholder="you@company.com"
               />
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm outline-none focus:border-blue-500 transition-colors"
+                autoComplete="current-password"
+                className="w-full px-3.5 py-2.5 bg-white/4 border border-white/8 hover:border-white/15 focus:border-blue-500 rounded-xl text-sm outline-none transition-colors placeholder:text-muted-foreground/50"
                 placeholder="••••••••"
               />
             </div>
 
-            {error && <p className="text-destructive text-xs">{error}</p>}
+            {error && (
+              <div className="px-3.5 py-2.5 bg-red-500/10 border border-red-500/20 rounded-xl">
+                <p className="text-xs text-red-400">{error}</p>
+              </div>
+            )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium rounded-lg transition-colors text-sm"
+              className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium rounded-xl transition-colors text-sm mt-1"
             >
-              {loading ? "Signing in…" : "Sign In"}
+              {loading ? "Signing in…" : (
+                <>Sign In <ArrowRight className="w-3.5 h-3.5" /></>
+              )}
             </button>
           </form>
         </div>
 
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-sm text-muted-foreground mt-5">
           No account?{" "}
-          <Link href="/register" className="text-blue-400 hover:underline">
-            Create one
+          <Link href="/register" className="text-blue-400 hover:text-blue-300 transition-colors font-medium">
+            Create one free
           </Link>
         </p>
       </div>
@@ -113,7 +132,7 @@ export default function LoginPage() {
 
 function GoogleIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24">
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
       <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
       <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
       <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>

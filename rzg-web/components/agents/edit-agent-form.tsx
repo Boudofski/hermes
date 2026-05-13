@@ -27,7 +27,7 @@ interface Agent {
 }
 
 const INPUT_CLS =
-  "w-full px-3 py-2 bg-background border border-border rounded-lg text-sm outline-none focus:border-blue-500 transition-colors font-sans";
+  "w-full px-3.5 py-2.5 bg-white/4 border border-white/8 hover:border-white/15 focus:border-blue-500 rounded-xl text-sm outline-none transition-colors font-sans placeholder:text-muted-foreground/50";
 
 export function EditAgentForm({ agent }: { agent: Agent }) {
   const router = useRouter();
@@ -90,8 +90,9 @@ export function EditAgentForm({ agent }: { agent: Agent }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-        <span className="text-sm font-medium">Identity</span>
+      {/* Identity */}
+      <div className="glass rounded-2xl p-5 space-y-4">
+        <span className="text-sm font-semibold">Identity</span>
 
         <Field label="Worker Name" required>
           <input type="text" value={form.name} onChange={(e) => set("name", e.target.value)} required placeholder="Research Agent" className={INPUT_CLS} />
@@ -127,8 +128,9 @@ export function EditAgentForm({ agent }: { agent: Agent }) {
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-        <span className="text-sm font-medium">Model & Settings</span>
+      {/* Model & Settings */}
+      <div className="glass rounded-2xl p-5 space-y-4">
+        <span className="text-sm font-semibold">Model & Settings</span>
 
         <Field label="Model">
           <select value={form.model} onChange={(e) => set("model", e.target.value)} className={INPUT_CLS}>
@@ -151,20 +153,22 @@ export function EditAgentForm({ agent }: { agent: Agent }) {
       </div>
 
       {error && (
-        <p className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg px-4 py-2">{error}</p>
+        <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+          <p className="text-sm text-red-400">{error}</p>
+        </div>
       )}
 
       <div className="flex items-center gap-3 flex-wrap">
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium rounded-lg transition-colors text-sm"
+          className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium rounded-xl transition-all text-sm"
         >
           {loading ? "Saving…" : "Save Changes"}
         </button>
         <Link
           href="/dashboard/agents"
-          className="px-5 py-2.5 border border-border rounded-lg text-sm hover:bg-secondary transition-colors"
+          className="px-5 py-2.5 border border-white/10 hover:border-white/20 rounded-xl text-sm hover:bg-white/5 transition-all"
         >
           Cancel
         </Link>
@@ -174,7 +178,7 @@ export function EditAgentForm({ agent }: { agent: Agent }) {
             <button
               type="button"
               onClick={() => setShowDeleteConfirm(true)}
-              className="flex items-center gap-2 px-3 py-2.5 border border-destructive/40 text-destructive/70 hover:border-destructive hover:text-destructive rounded-lg text-sm transition-colors"
+              className="flex items-center gap-2 px-3 py-2.5 border border-red-500/25 text-red-400/70 hover:border-red-500/50 hover:text-red-400 rounded-xl text-sm transition-all"
             >
               <Trash2 className="w-3.5 h-3.5" />
               Delete Worker
@@ -186,14 +190,14 @@ export function EditAgentForm({ agent }: { agent: Agent }) {
                 type="button"
                 onClick={handleDelete}
                 disabled={deleting}
-                className="px-3 py-1.5 bg-destructive hover:bg-destructive/80 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors"
+                className="px-3 py-1.5 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors"
               >
                 {deleting ? "Deleting…" : "Yes, delete"}
               </button>
               <button
                 type="button"
                 onClick={() => setShowDeleteConfirm(false)}
-                className="px-3 py-1.5 border border-border rounded-lg text-xs hover:bg-secondary transition-colors"
+                className="px-3 py-1.5 border border-white/10 rounded-lg text-xs hover:bg-white/5 transition-all"
               >
                 Cancel
               </button>
@@ -207,12 +211,12 @@ export function EditAgentForm({ agent }: { agent: Agent }) {
 
 function Field({ label, children, required, hint }: { label: string; children: React.ReactNode; required?: boolean; hint?: string }) {
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       <label className="text-xs font-medium text-muted-foreground">
-        {label} {required && <span className="text-destructive">*</span>}
+        {label} {required && <span className="text-red-400">*</span>}
       </label>
       {children}
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+      {hint && <p className="text-xs text-muted-foreground/70">{hint}</p>}
     </div>
   );
 }
@@ -220,12 +224,12 @@ function Field({ label, children, required, hint }: { label: string; children: R
 function Toggle({ enabled, onToggle, label, hint }: { enabled: boolean; onToggle: () => void; label: string; hint?: string }) {
   return (
     <button type="button" onClick={onToggle} className="flex items-center gap-3 w-full text-left">
-      <div className={`w-10 h-5 rounded-full transition-colors relative shrink-0 ${enabled ? "bg-blue-600" : "bg-secondary"}`}>
+      <div className={`w-10 h-5 rounded-full transition-colors relative shrink-0 ${enabled ? "bg-blue-600" : "bg-white/10"}`}>
         <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${enabled ? "translate-x-5" : "translate-x-0.5"}`} />
       </div>
       <div>
         <span className="text-sm font-medium">{label}</span>
-        {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+        {hint && <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>}
       </div>
     </button>
   );

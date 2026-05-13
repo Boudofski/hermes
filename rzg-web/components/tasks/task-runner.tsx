@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Play, Square, RefreshCw, CheckCircle2, AlertCircle, Clock, ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
+import {
+  Play, Square, RefreshCw, CheckCircle2, AlertCircle,
+  Clock, ChevronDown, ChevronUp, RotateCcw, Terminal,
+} from "lucide-react";
 
 type LogEvent = {
   id: string;
@@ -144,7 +147,7 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
               <button
                 onClick={handleRun}
                 disabled={!agent}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-all"
               >
                 <RotateCcw className="w-4 h-4" />
                 Retry
@@ -153,7 +156,7 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
               <button
                 onClick={handleRun}
                 disabled={!agent}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-all glow-blue"
               >
                 <Play className="w-4 h-4" />
                 Run Now
@@ -163,7 +166,7 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
             {hasResult && !(isFailed || isCancelled) && (
               <button
                 onClick={handleRun}
-                className="flex items-center gap-2 px-3 py-2 border border-border hover:bg-secondary text-sm rounded-lg transition-colors"
+                className="flex items-center gap-2 px-3 py-2 border border-white/10 hover:border-white/20 hover:bg-white/5 text-sm rounded-xl transition-all"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 Re-run
@@ -173,7 +176,7 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
         ) : (
           <button
             onClick={handleStop}
-            className="flex items-center gap-2 px-4 py-2 bg-destructive/80 hover:bg-destructive text-white text-sm font-medium rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-red-600/80 hover:bg-red-600 text-white text-sm font-medium rounded-xl transition-all"
           >
             <Square className="w-4 h-4" />
             Stop
@@ -189,12 +192,18 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
 
       {/* Log viewer */}
       {logs.length > 0 && (
-        <div className="bg-[hsl(222,47%,3%)] border border-border rounded-xl overflow-hidden">
-          <div className="px-4 py-2 border-b border-border flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${running ? "bg-blue-400 animate-pulse" : "bg-muted-foreground"}`} />
+        <div className="rounded-2xl overflow-hidden border border-white/6 bg-[hsl(222,60%,3%)]">
+          <div className="px-4 py-2.5 border-b border-white/5 flex items-center gap-2">
+            <Terminal className="w-3.5 h-3.5 text-muted-foreground" />
             <span className="text-xs font-mono text-muted-foreground">Agent Activity</span>
+            {running && (
+              <span className="ml-auto flex items-center gap-1.5 text-xs text-blue-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse-glow" />
+                Live
+              </span>
+            )}
           </div>
-          <div className="p-4 max-h-80 overflow-y-auto font-mono text-xs space-y-1">
+          <div className="p-4 max-h-80 overflow-y-auto font-mono text-xs space-y-1.5">
             {logs.map((log, i) => (
               <LogLine key={i} log={log} />
             ))}
@@ -205,10 +214,12 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
 
       {/* Error */}
       {error && (
-        <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/30 rounded-xl">
-          <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 p-4 bg-red-500/8 border border-red-500/20 rounded-2xl">
+          <div className="w-7 h-7 rounded-lg bg-red-500/15 flex items-center justify-center shrink-0 mt-0.5">
+            <AlertCircle className="w-3.5 h-3.5 text-red-400" />
+          </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-destructive">Run failed</p>
+            <p className="text-sm font-medium text-red-400">Run failed</p>
             <p className="text-xs text-muted-foreground mt-0.5 break-words">{error}</p>
           </div>
         </div>
@@ -218,10 +229,12 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
       {finalResponse && (
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-green-400" />
-            <span className="text-sm font-medium">Output</span>
+            <div className="w-6 h-6 rounded-lg bg-green-500/10 flex items-center justify-center">
+              <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
+            </div>
+            <span className="text-sm font-semibold">Output</span>
           </div>
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="glass rounded-2xl p-5">
             <pre className="text-sm whitespace-pre-wrap font-sans leading-relaxed">{finalResponse}</pre>
           </div>
         </div>
@@ -229,9 +242,12 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
 
       {/* Empty state */}
       {!running && logs.length === 0 && !finalResponse && !error && (
-        <div className="border border-dashed border-border rounded-xl p-8 text-center">
+        <div className="glass rounded-2xl p-10 text-center">
+          <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mx-auto mb-3">
+            <Play className="w-5 h-5 text-muted-foreground" />
+          </div>
           <p className="text-sm text-muted-foreground">
-            No runs yet. Click <strong>Run Now</strong> to execute this task.
+            No runs yet. Click <strong className="text-foreground">Run Now</strong> to execute this task.
           </p>
         </div>
       )}
@@ -249,20 +265,22 @@ function RunHistory({ runs }: { runs: HistoryRun[] }) {
   const [expandedRun, setExpandedRun] = useState<string | null>(null);
 
   return (
-    <div className="border border-border rounded-xl overflow-hidden">
+    <div className="glass rounded-2xl overflow-hidden">
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-secondary/50 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/4 transition-colors"
       >
         <span className="text-xs font-medium text-muted-foreground">
           Run History ({runs.length} previous run{runs.length !== 1 ? "s" : ""})
         </span>
-        {expanded ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
+        {expanded
+          ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
+          : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
       </button>
 
       {expanded && (
-        <div className="border-t border-border divide-y divide-border">
+        <div className="border-t border-white/5 divide-y divide-white/5">
           {runs.map((run, i) => (
             <div key={run.id} className="p-3 space-y-2">
               <button
@@ -277,7 +295,7 @@ function RunHistory({ runs }: { runs: HistoryRun[] }) {
                     {run.createdAt ? new Date(run.createdAt).toLocaleString() : "—"}
                   </span>
                 </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full ${statusChip(run.status)}`}>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusChip(run.status)}`}>
                   {run.status}
                 </span>
                 {(run.finalResponse || run.errorMessage) && (
@@ -288,7 +306,7 @@ function RunHistory({ runs }: { runs: HistoryRun[] }) {
               </button>
 
               {expandedRun === run.id && run.finalResponse && (
-                <div className="ml-5 bg-card rounded-lg p-3">
+                <div className="ml-5 bg-white/3 rounded-xl p-3 border border-white/5">
                   <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed text-muted-foreground line-clamp-10">
                     {run.finalResponse}
                   </pre>
@@ -296,8 +314,8 @@ function RunHistory({ runs }: { runs: HistoryRun[] }) {
               )}
 
               {expandedRun === run.id && run.errorMessage && (
-                <div className="ml-5 bg-destructive/10 rounded-lg p-3">
-                  <p className="text-xs text-destructive">{run.errorMessage}</p>
+                <div className="ml-5 bg-red-500/8 rounded-xl p-3 border border-red-500/15">
+                  <p className="text-xs text-red-400">{run.errorMessage}</p>
                 </div>
               )}
             </div>
@@ -311,10 +329,10 @@ function RunHistory({ runs }: { runs: HistoryRun[] }) {
 function statusChip(status: string) {
   const map: Record<string, string> = {
     completed: "bg-green-400/10 text-green-400",
-    failed: "bg-destructive/10 text-destructive",
-    cancelled: "bg-secondary text-muted-foreground",
+    failed: "bg-red-400/10 text-red-400",
+    cancelled: "bg-white/8 text-muted-foreground",
     running: "bg-yellow-400/10 text-yellow-400",
-    pending: "bg-secondary text-muted-foreground",
+    pending: "bg-white/8 text-muted-foreground",
   };
   return map[status] ?? map.pending;
 }
@@ -322,7 +340,7 @@ function statusChip(status: string) {
 function StatusDot({ status }: { status: string }) {
   const color: Record<string, string> = {
     completed: "bg-green-400",
-    failed: "bg-destructive",
+    failed: "bg-red-400",
     cancelled: "bg-muted-foreground",
     running: "bg-yellow-400",
     pending: "bg-muted-foreground",
@@ -333,39 +351,39 @@ function StatusDot({ status }: { status: string }) {
 function LogLine({ log }: { log: { type: string; content: string; toolName?: string | null } }) {
   if (log.type === "tool_start") {
     return (
-      <div className="text-violet-400">
-        <span className="text-muted-foreground">▶ </span>
-        {log.toolName ?? log.content}
-        <span className="text-muted-foreground ml-1">starting…</span>
+      <div className="text-violet-400 flex items-baseline gap-1.5">
+        <span className="text-muted-foreground/60 shrink-0">▶</span>
+        <span>{log.toolName ?? log.content}</span>
+        <span className="text-muted-foreground/60 text-xs">starting…</span>
       </div>
     );
   }
   if (log.type === "tool_end") {
     return (
-      <div className="text-green-400/70">
-        <span className="text-muted-foreground">✓ </span>
-        {log.toolName ?? log.content}
+      <div className="text-green-400/70 flex items-baseline gap-1.5">
+        <span className="text-muted-foreground/60 shrink-0">✓</span>
+        <span>{log.toolName ?? log.content}</span>
       </div>
     );
   }
   if (log.type === "text_delta") {
-    return <div className="text-foreground">{log.content}</div>;
+    return <div className="text-foreground/90 leading-relaxed">{log.content}</div>;
   }
   return (
-    <div className="text-muted-foreground">
-      <span className="text-blue-400/60">• </span>
-      {log.content}
+    <div className="text-muted-foreground flex items-baseline gap-1.5">
+      <span className="text-blue-400/50 shrink-0">•</span>
+      <span>{log.content}</span>
     </div>
   );
 }
 
 function StatusPill({ status }: { status: string }) {
   const cfg: Record<string, { label: string; cls: string; icon: React.ReactNode }> = {
-    idle: { label: "Idle", cls: "text-muted-foreground bg-secondary", icon: <Clock className="w-3 h-3" /> },
+    idle: { label: "Idle", cls: "text-muted-foreground bg-white/6", icon: <Clock className="w-3 h-3" /> },
     running: { label: "Running", cls: "text-yellow-400 bg-yellow-400/10", icon: <Clock className="w-3 h-3 animate-spin" /> },
     completed: { label: "Completed", cls: "text-green-400 bg-green-400/10", icon: <CheckCircle2 className="w-3 h-3" /> },
-    failed: { label: "Failed", cls: "text-destructive bg-destructive/10", icon: <AlertCircle className="w-3 h-3" /> },
-    cancelled: { label: "Cancelled", cls: "text-muted-foreground bg-secondary", icon: <Square className="w-3 h-3" /> },
+    failed: { label: "Failed", cls: "text-red-400 bg-red-400/10", icon: <AlertCircle className="w-3 h-3" /> },
+    cancelled: { label: "Cancelled", cls: "text-muted-foreground bg-white/6", icon: <Square className="w-3 h-3" /> },
   };
   const { label, cls, icon } = cfg[status] ?? cfg.idle;
   return (

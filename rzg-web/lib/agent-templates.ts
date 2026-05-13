@@ -9,7 +9,7 @@ export interface AgentTemplate {
   disabledToolsets: string[];
   maxIterations: number;
   memoryEnabled: boolean;
-  icon: string; // emoji
+  icon: string; // lucide icon name
   description: string; // shown in template picker
 }
 
@@ -17,7 +17,7 @@ export const AGENT_TEMPLATES: AgentTemplate[] = [
   {
     id: "research",
     name: "Research Agent",
-    icon: "🔬",
+    icon: "Microscope",
     description: "Deep-dives any topic and produces structured research reports",
     role: "Senior Research Analyst",
     goal: "Conduct thorough, multi-source research on any topic and synthesize findings into clear, structured reports with citations and actionable insights.",
@@ -56,7 +56,7 @@ Structure every research output as:
   {
     id: "content",
     name: "Content Agent",
-    icon: "✍️",
+    icon: "PenLine",
     description: "Writes blog posts, articles, and long-form content",
     role: "Senior Content Writer & Strategist",
     goal: "Create high-quality, engaging written content — blog posts, articles, landing page copy, and thought leadership pieces — tailored to the target audience and optimized for readability.",
@@ -91,7 +91,7 @@ Blog post | Article | Case study | Product description | Email newsletter sectio
   {
     id: "seo",
     name: "SEO Agent",
-    icon: "📈",
+    icon: "TrendingUp",
     description: "Audits websites and finds keyword and content opportunities",
     role: "SEO Strategist & Technical Analyst",
     goal: "Analyze websites, research keyword opportunities, audit on-page SEO, and deliver prioritized optimization recommendations that drive organic traffic growth.",
@@ -139,7 +139,7 @@ Prioritize: High-impact / Low-effort items first.
   {
     id: "competitor-analysis",
     name: "Competitor Analysis Agent",
-    icon: "🎯",
+    icon: "Target",
     description: "Maps the competitive landscape and finds market gaps",
     role: "Market Intelligence & Competitive Strategy Analyst",
     goal: "Research competitors deeply — their positioning, pricing, features, strengths, weaknesses, and recent moves — then synthesize into strategic intelligence the business can act on.",
@@ -180,7 +180,7 @@ Company website → Pricing page → G2/Capterra/Trustpilot reviews → LinkedIn
   {
     id: "marketing",
     name: "Marketing Agent",
-    icon: "📣",
+    icon: "Megaphone",
     description: "Plans campaigns, writes copy, and builds marketing assets",
     role: "Digital Marketing Specialist",
     goal: "Plan and execute marketing campaigns — from strategy to copy to distribution plans — across email, social media, content, and paid channels.",
@@ -222,7 +222,7 @@ For every piece of copy, provide:
   {
     id: "social-media",
     name: "Social Media Agent",
-    icon: "📱",
+    icon: "Smartphone",
     description: "Produces social content calendars and platform-native posts",
     role: "Social Media Content Strategist",
     goal: "Create platform-native social media content — posts, threads, carousels, hooks — that grows audience and drives engagement across LinkedIn, Twitter/X, and Instagram.",
@@ -269,7 +269,7 @@ Unless instructed otherwise:
   {
     id: "proposal-writer",
     name: "Proposal Writer Agent",
-    icon: "📋",
+    icon: "ClipboardList",
     description: "Writes client proposals, SOWs, and pitch documents",
     role: "Senior Business Development & Proposal Writer",
     goal: "Write compelling, professional client proposals, statements of work, and pitch documents that clearly articulate value, scope, timeline, and pricing.",
@@ -311,7 +311,7 @@ Ask for or infer:
   {
     id: "business-automation",
     name: "Business Automation Agent",
-    icon: "⚙️",
+    icon: "Settings2",
     description: "Identifies inefficiencies and designs automation workflows",
     role: "Business Process & Automation Analyst",
     goal: "Analyze business processes, identify automation opportunities, design workflow solutions, and produce implementation-ready specifications for automating repetitive business tasks.",

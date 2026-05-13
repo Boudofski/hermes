@@ -65,11 +65,14 @@ export function MemoryManager({ initialMemories, agents }: Props) {
       if (!res.ok) throw new Error("Delete failed");
       setMemoryList((prev) => prev.filter((m) => m.id !== id));
     } catch {
-      // silently fail — optimistic would be better but this is MVP
+      // silently fail
     } finally {
       setDeleting(null);
     }
   }
+
+  const INPUT_CLS =
+    "w-full px-3.5 py-2.5 bg-white/4 border border-white/8 hover:border-white/15 focus:border-blue-500 rounded-xl text-sm outline-none transition-colors placeholder:text-muted-foreground/50";
 
   return (
     <div className="space-y-4">
@@ -81,7 +84,7 @@ export function MemoryManager({ initialMemories, agents }: Props) {
         <button
           type="button"
           onClick={() => setShowForm((v) => !v)}
-          className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg transition-colors"
+          className="flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-xl transition-all"
         >
           <Plus className="w-3.5 h-3.5" />
           Add Memory
@@ -90,10 +93,10 @@ export function MemoryManager({ initialMemories, agents }: Props) {
 
       {/* Add form */}
       {showForm && (
-        <form onSubmit={handleAdd} className="bg-card border border-blue-500/30 rounded-xl p-4 space-y-3">
-          <p className="text-xs font-medium text-blue-400">New Memory Entry</p>
+        <form onSubmit={handleAdd} className="glass border-blue-500/30 rounded-2xl p-5 space-y-4">
+          <p className="text-xs font-semibold text-blue-400 uppercase tracking-widest">New Memory Entry</p>
 
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">Key</label>
             <input
               type="text"
@@ -101,11 +104,11 @@ export function MemoryManager({ initialMemories, agents }: Props) {
               value={form.key}
               onChange={(e) => setForm((f) => ({ ...f, key: e.target.value }))}
               placeholder="user_preference / project_context / tone_of_voice…"
-              className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm outline-none focus:border-blue-500 transition-colors"
+              className={INPUT_CLS}
             />
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">Content</label>
             <textarea
               required
@@ -113,19 +116,19 @@ export function MemoryManager({ initialMemories, agents }: Props) {
               onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
               rows={3}
               placeholder="The stored fact, instruction, or context…"
-              className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm outline-none focus:border-blue-500 transition-colors resize-none"
+              className={`${INPUT_CLS} resize-none`}
             />
           </div>
 
           {agents.length > 0 && (
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">
-                Assign to worker <span className="font-normal">(optional)</span>
+                Assign to worker <span className="text-muted-foreground/60 font-normal">(optional)</span>
               </label>
               <select
                 value={form.agentId}
                 onChange={(e) => setForm((f) => ({ ...f, agentId: e.target.value }))}
-                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm outline-none focus:border-blue-500 transition-colors"
+                className={INPUT_CLS}
               >
                 <option value="">— Global (all workers) —</option>
                 {agents.map((a) => (
@@ -136,21 +139,23 @@ export function MemoryManager({ initialMemories, agents }: Props) {
           )}
 
           {error && (
-            <p className="text-xs text-destructive">{error}</p>
+            <div className="px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-xl">
+              <p className="text-xs text-red-400">{error}</p>
+            </div>
           )}
 
           <div className="flex gap-2">
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors"
+              className="px-5 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-medium rounded-xl transition-all"
             >
-              {saving ? "Saving…" : "Save"}
+              {saving ? "Saving…" : "Save Memory"}
             </button>
             <button
               type="button"
               onClick={() => { setShowForm(false); setError(""); }}
-              className="px-4 py-1.5 border border-border rounded-lg text-xs hover:bg-secondary transition-colors"
+              className="px-5 py-2 border border-white/10 hover:border-white/20 rounded-xl text-xs hover:bg-white/5 transition-all"
             >
               Cancel
             </button>
@@ -160,24 +165,30 @@ export function MemoryManager({ initialMemories, agents }: Props) {
 
       {/* Memory list */}
       {memoryList.length === 0 && !showForm ? (
-        <div className="border border-dashed border-border rounded-xl p-12 text-center space-y-3">
-          <Brain className="w-10 h-10 text-muted-foreground mx-auto" />
-          <p className="text-sm text-muted-foreground">No memories yet</p>
-          <p className="text-xs text-muted-foreground">
-            Add memories manually, or enable persistent memory on an AI worker and they will record knowledge automatically as they run tasks.
-          </p>
+        <div className="glass rounded-2xl p-14 text-center space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 flex items-center justify-center mx-auto">
+            <Brain className="w-6 h-6 text-cyan-400" />
+          </div>
+          <div>
+            <p className="font-medium text-sm">No memories yet</p>
+            <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto leading-relaxed">
+              Add memories manually, or enable persistent memory on an AI worker and they will record knowledge automatically as they run tasks.
+            </p>
+          </div>
         </div>
       ) : (
         <div className="space-y-2">
           {memoryList.map((m) => (
-            <div key={m.id} className="bg-card border border-border rounded-xl overflow-hidden">
+            <div key={m.id} className="glass rounded-xl overflow-hidden">
               <div className="flex items-center gap-3 px-4 py-3">
                 <button
                   type="button"
                   onClick={() => setExpandedId(expandedId === m.id ? null : m.id)}
                   className="flex-1 flex items-center gap-3 text-left min-w-0"
                 >
-                  <span className="text-xs font-mono text-blue-400 shrink-0">{m.key}</span>
+                  <code className="text-xs font-mono text-blue-400 shrink-0 bg-blue-500/10 px-1.5 py-0.5 rounded-md">
+                    {m.key}
+                  </code>
                   <span className="text-xs text-muted-foreground truncate">{m.content}</span>
                   {expandedId === m.id
                     ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
@@ -190,7 +201,7 @@ export function MemoryManager({ initialMemories, agents }: Props) {
                   type="button"
                   onClick={() => handleDelete(m.id)}
                   disabled={deleting === m.id}
-                  className="p-1.5 text-muted-foreground hover:text-destructive disabled:opacity-40 transition-colors shrink-0"
+                  className="p-1.5 text-muted-foreground hover:text-red-400 disabled:opacity-40 transition-colors shrink-0"
                   title="Delete memory"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -198,7 +209,7 @@ export function MemoryManager({ initialMemories, agents }: Props) {
               </div>
 
               {expandedId === m.id && (
-                <div className="px-4 pb-3 border-t border-border pt-3">
+                <div className="px-4 pb-4 border-t border-white/5 pt-3">
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">{m.content}</p>
                   <p className="text-xs text-muted-foreground mt-2">
                     {m.agentName ? `Assigned to: ${m.agentName}` : "Global — available to all workers"}
