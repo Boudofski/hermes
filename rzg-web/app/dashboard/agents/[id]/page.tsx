@@ -4,7 +4,7 @@ import { agents, workspaces } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Bot } from "lucide-react";
+import { ArrowLeft, Bot, Brain, Settings2 } from "lucide-react";
 import { EditAgentForm } from "@/components/agents/edit-agent-form";
 
 type Params = { params: Promise<{ id: string }> };
@@ -29,39 +29,54 @@ export default async function EditAgentPage({ params }: Params) {
   if (!agent) notFound();
 
   return (
-    <div className="p-8 max-w-2xl space-y-8">
-      <div className="flex items-center gap-3">
-        <Link
-          href="/dashboard/agents"
-          className="w-8 h-8 rounded-lg flex items-center justify-center transition-all shrink-0"
-          style={{ border: "1px solid #1e2640", color: "#4a5568" }}
-        >
+    <div className="min-h-screen pb-24 md:pb-0">
+      <div className="border-b border-white/10 px-5 py-6 sm:px-8">
+        <Link href="/dashboard/agents" className="button-secondary mb-5 px-3 py-2">
           <ArrowLeft className="w-4 h-4" />
+          Directory
         </Link>
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-            style={{ background: "rgba(37,99,235,0.12)", border: "1px solid rgba(37,99,235,0.25)" }}>
-            <Bot className="w-4.5 h-4.5" style={{ color: "#3b82f6" }} />
-          </div>
+        <div className="flex items-center gap-4">
+          <div className="brand-mark h-12 w-12"><Bot className="h-6 w-6" /></div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#2d4a8a" }}>Edit</p>
-            <h1 className="text-xl font-bold text-white leading-tight">{agent.name}</h1>
+            <p className="eyebrow">Edit Worker</p>
+            <h1 className="mt-1 text-3xl font-black tracking-tight text-white">{agent.name}</h1>
+            <p className="mt-1 text-sm font-semibold text-cyan-100">{agent.role}</p>
           </div>
         </div>
       </div>
 
-      <EditAgentForm
-        agent={{
-          id: agent.id,
-          name: agent.name,
-          role: agent.role,
-          goal: agent.goal,
-          instructions: agent.instructions ?? null,
-          model: agent.model,
-          memoryEnabled: agent.memoryEnabled,
-          maxIterations: agent.maxIterations,
-        }}
-      />
+      <div className="grid gap-6 p-5 sm:p-8 xl:grid-cols-[360px_1fr]">
+        <aside className="space-y-4">
+          <div className="surface-card p-5">
+            <Settings2 className="mb-4 h-7 w-7 text-cyan-200" />
+            <h2 className="text-xl font-bold text-white">Runtime profile</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              Tune this worker without touching task history, saved outputs, or Supabase authentication.
+            </p>
+          </div>
+          <div className="metal-panel p-5">
+            <Brain className="mb-4 h-7 w-7 text-cyan-200" />
+            <p className="font-bold text-white">Memory is per worker</p>
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              Enable memory when the worker should preserve context across future missions.
+            </p>
+          </div>
+        </aside>
+        <main>
+          <EditAgentForm
+            agent={{
+              id: agent.id,
+              name: agent.name,
+              role: agent.role,
+              goal: agent.goal,
+              instructions: agent.instructions ?? null,
+              model: agent.model,
+              memoryEnabled: agent.memoryEnabled,
+              maxIterations: agent.maxIterations,
+            }}
+          />
+        </main>
+      </div>
     </div>
   );
 }

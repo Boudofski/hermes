@@ -3,20 +3,14 @@ import { db } from "@/lib/db";
 import { agents, tasks, workspaces } from "@/lib/db/schema";
 import { eq, count } from "drizzle-orm";
 import Link from "next/link";
-import { Bot, Plus, Pencil, Zap, Brain, Layers, IterationCcw } from "lucide-react";
+import { Bot, Brain, BriefcaseBusiness, IterationCcw, Layers, Pencil, Plus, Sparkles, Zap } from "lucide-react";
+import { AGENT_TEMPLATES } from "@/lib/agent-templates";
+import { CommandButton } from "@/components/ui/command-button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageTitle } from "@/components/ui/page-title";
+import { StatusBadge } from "@/components/ui/status-badge";
 
 export const metadata = { title: "AI Workers — RZG AI" };
-
-const ACCENT_CLASSES = [
-  "accent-blue",
-  "accent-cyan",
-  "accent-violet",
-  "accent-green",
-  "accent-amber",
-  "accent-pink",
-];
-
-const ACCENT_COLORS = ["#3b82f6", "#06b6d4", "#8b5cf6", "#22c55e", "#f59e0b", "#ec4899"];
 
 export default async function AgentsPage() {
   const supabase = await createClient();
@@ -36,154 +30,111 @@ export default async function AgentsPage() {
   const taskCountMap = Object.fromEntries(taskCounts.map((r) => [r.agentId, r.taskCount]));
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Page header */}
-      <div className="px-8 py-6 border-b border-border">
-        <p className="text-xs font-semibold uppercase tracking-widest text-blue-400/70 mb-1">Workforce</p>
-        <div className="flex items-end justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">AI Workers</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {agentList.length} worker{agentList.length !== 1 ? "s" : ""} deployed
-            </p>
-          </div>
-          <Link
-            href="/dashboard/agents/new"
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            New Worker
-          </Link>
-        </div>
-      </div>
+    <div className="min-h-screen pb-24 md:pb-0">
+      <PageTitle
+        eyebrow="AI Employee Directory"
+        title="AI Workers"
+        description={`${agentList.length} worker${agentList.length !== 1 ? "s" : ""} deployed. Hire, configure, and route missions to your AI employees.`}
+        action={<CommandButton href="/dashboard/agents/new"><Plus className="h-4 w-4" /> New Worker</CommandButton>}
+      />
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-8">
+      <div className="space-y-8 p-5 sm:p-8">
         {agentList.length === 0 ? (
-          <div className="max-w-md mx-auto mt-16 text-center">
-            <div className="panel rounded-2xl p-12 space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mx-auto">
-                <Bot className="w-7 h-7 text-blue-400" />
-              </div>
-              <div>
-                <p className="font-semibold">No AI workers yet</p>
-                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                  Create your first autonomous AI worker from a template or from scratch.
-                </p>
-              </div>
-              <Link
-                href="/dashboard/agents/new"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                Create AI Worker
-              </Link>
-            </div>
-          </div>
+          <EmptyState
+            icon={<Bot className="h-7 w-7" />}
+            title="No AI workers yet"
+            description="Create your first autonomous AI employee from a template or configure one from scratch."
+            action={<CommandButton href="/dashboard/agents/new"><Plus className="h-4 w-4" /> Create AI Worker</CommandButton>}
+          />
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 max-w-6xl">
-            {agentList.map((agent, i) => {
-              const accentClass = ACCENT_CLASSES[i % ACCENT_CLASSES.length];
-              const accentColor = ACCENT_COLORS[i % ACCENT_COLORS.length];
+          <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+            {agentList.map((agent, index) => {
               const taskCount = taskCountMap[agent.id] ?? 0;
-
+              const accent = [
+                "bg-cyan-300",
+                "bg-blue-300",
+                "bg-emerald-300",
+                "bg-amber-300",
+                "bg-sky-300",
+                "bg-teal-300",
+              ][index % 6];
               return (
-                <div key={agent.id} className={`worker-card flex flex-col ${accentClass}`}>
-                  <div className="p-5 flex-1 flex flex-col gap-4">
-                    {/* Identity row */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div
-                          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                          style={{ background: `${accentColor}15`, border: `1px solid ${accentColor}28` }}
-                        >
-                          <Bot className="w-5 h-5" style={{ color: accentColor }} />
+                <article key={agent.id} className="surface-card surface-card-hover group overflow-hidden">
+                  <div className={`h-1 ${accent}`} />
+                  <div className="p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex min-w-0 items-center gap-4">
+                        <div className="brand-mark h-12 w-12 shrink-0">
+                          <Bot className="h-6 w-6" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold truncate">{agent.name}</p>
-                          <p className="text-xs text-muted-foreground truncate mt-0.5">{agent.role}</p>
+                          <h2 className="truncate text-lg font-black text-white">{agent.name}</h2>
+                          <p className="mt-1 truncate text-sm font-semibold text-cyan-100">{agent.role}</p>
                         </div>
                       </div>
-                      <span className={agent.isActive ? "badge badge-green shrink-0" : "badge badge-muted shrink-0"}>
-                        {agent.isActive ? "Active" : "Inactive"}
-                      </span>
+                      <StatusBadge status={agent.isActive ? "active" : "inactive"} />
                     </div>
 
-                    {/* Goal */}
-                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 flex-1">
-                      {agent.goal}
-                    </p>
+                    <p className="mt-5 line-clamp-3 min-h-[4.5rem] text-sm leading-6 text-slate-300">{agent.goal}</p>
 
-                    {/* Stats row */}
-                    <div className="grid grid-cols-3 gap-2">
-                      <StatChip
-                        icon={<Layers className="w-3 h-3" />}
-                        label="Tasks"
-                        value={String(taskCount)}
-                      />
-                      <StatChip
-                        icon={<Brain className="w-3 h-3" />}
-                        label="Memory"
-                        value={agent.memoryEnabled ? "On" : "Off"}
-                        active={agent.memoryEnabled}
-                      />
-                      <StatChip
-                        icon={<IterationCcw className="w-3 h-3" />}
-                        label="Max iter"
-                        value={String(agent.maxIterations)}
-                      />
+                    <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      <WorkerStat icon={<Layers className="h-4 w-4" />} label="Tasks" value={String(taskCount)} />
+                      <WorkerStat icon={<Brain className="h-4 w-4" />} label="Memory" value={agent.memoryEnabled ? "On" : "Off"} active={agent.memoryEnabled} />
+                      <WorkerStat icon={<IterationCcw className="h-4 w-4" />} label="Max Iter" value={String(agent.maxIterations)} />
+                      <WorkerStat icon={<BriefcaseBusiness className="h-4 w-4" />} label="Model" value={agent.model.split("/").pop() ?? agent.model} />
                     </div>
 
-                    {/* Footer */}
-                    <div className="flex items-center justify-between pt-3 border-t border-border/60">
-                      <code className="text-xs px-2 py-0.5 rounded bg-white/4 border border-border text-blue-400 font-mono">
-                        {agent.model.split("/").pop()}
+                    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
+                      <code className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 font-mono text-xs font-bold text-cyan-100">
+                        {agent.model}
                       </code>
-                      <div className="flex items-center gap-3">
-                        <Link
-                          href={`/dashboard/agents/${agent.id}`}
-                          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          <Pencil className="w-3 h-3" />
+                      <div className="flex items-center gap-2">
+                        <Link href={`/dashboard/agents/${agent.id}`} className="button-secondary px-3 py-2">
+                          <Pencil className="h-4 w-4" />
                           Edit
                         </Link>
-                        <Link
-                          href={`/dashboard/tasks?agentId=${agent.id}`}
-                          className="flex items-center gap-1 text-xs font-medium transition-colors"
-                          style={{ color: accentColor }}
-                        >
-                          <Zap className="w-3 h-3" />
+                        <Link href={`/dashboard/tasks?agentId=${agent.id}`} className="button-primary px-3 py-2">
+                          <Zap className="h-4 w-4" />
                           Run Task
                         </Link>
                       </div>
                     </div>
                   </div>
-                </div>
+                </article>
               );
             })}
           </div>
         )}
+
+        <section className="surface-panel p-5 sm:p-6">
+          <div className="mb-5 flex items-center gap-3">
+            <div className="brand-mark h-10 w-10"><Sparkles className="h-5 w-5" /></div>
+            <div>
+              <p className="eyebrow">Hiring Templates</p>
+              <h2 className="text-xl font-bold text-white">Start with a specialist profile</h2>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {AGENT_TEMPLATES.slice(0, 8).map((template) => (
+              <Link key={template.id} href="/dashboard/agents/new" className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-cyan-300/30 hover:bg-cyan-300/10">
+                <p className="font-bold text-white">{template.name}</p>
+                <p className="mt-1 text-sm font-semibold text-cyan-100">{template.role}</p>
+                <p className="mt-3 line-clamp-2 text-xs leading-5 text-slate-400">{template.description}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   );
 }
 
-function StatChip({
-  icon,
-  label,
-  value,
-  active,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  active?: boolean;
-}) {
+function WorkerStat({ icon, label, value, active }: { icon: React.ReactNode; label: string; value: string; active?: boolean }) {
   return (
-    <div className="flex flex-col items-center gap-1 py-2 px-2 rounded-lg bg-white/3 border border-border/50">
-      <div className={`${active ? "text-cyan-400" : "text-muted-foreground"}`}>{icon}</div>
-      <span className="text-xs font-semibold tabular-nums">{value}</span>
-      <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wide">{label}</span>
+    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+      <div className={active ? "text-cyan-100" : "text-slate-400"}>{icon}</div>
+      <p className="mt-2 truncate font-mono text-sm font-black text-white">{value}</p>
+      <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{label}</p>
     </div>
   );
 }

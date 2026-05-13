@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, Brain, X } from "lucide-react";
+import { Brain, Globe2, Plus, Trash2, UserRound, X } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type Agent = { id: string; name: string };
 
@@ -66,124 +67,63 @@ export function MemoryManager({ initialMemories, agents }: Props) {
       setMemoryList((prev) => prev.filter((m) => m.id !== id));
       if (expandedId === id) setExpandedId(null);
     } catch {
-      // silently fail
+      // Non-destructive UI: keep the existing memory visible if deletion fails.
     } finally {
       setDeleting(null);
     }
   }
 
-  const INPUT_STYLE = { background: "#0d1120", border: "1px solid #1e2640", caretColor: "#3b82f6" };
-  const INPUT_CLS = "w-full px-3.5 py-2.5 rounded-lg text-sm text-white outline-none transition-all";
-
   return (
-    <div className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm" style={{ color: "#4a5568" }}>
-          {memoryList.length} memor{memoryList.length !== 1 ? "ies" : "y"}
+    <main className="space-y-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm font-semibold text-slate-300">
+          {memoryList.length} memor{memoryList.length !== 1 ? "ies" : "y"} stored
         </p>
-        <button
-          type="button"
-          onClick={() => setShowForm((v) => !v)}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold text-white transition-all"
-          style={{ background: "#1d4ed8" }}
-        >
-          <Plus className="w-3.5 h-3.5" />
+        <button type="button" onClick={() => setShowForm((v) => !v)} className="button-primary">
+          <Plus className="h-4 w-4" />
           Add Memory
         </button>
       </div>
 
-      {/* Add form modal */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
-          <div className="w-full max-w-md rounded-xl overflow-hidden shadow-2xl" style={{ background: "#0b0e18", border: "1px solid #1e2640" }}>
-            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid #1e2640" }}>
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(6,182,212,0.12)", border: "1px solid rgba(6,182,212,0.25)" }}>
-                  <Brain className="w-3.5 h-3.5" style={{ color: "#06b6d4" }} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
+          <div className="surface-panel w-full max-w-lg overflow-hidden">
+            <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className="brand-mark h-9 w-9"><Brain className="h-4 w-4" /></div>
+                <div>
+                  <p className="eyebrow">Memory Vault</p>
+                  <h2 className="font-bold text-white">New Memory Entry</h2>
                 </div>
-                <h2 className="font-semibold text-sm text-white">New Memory Entry</h2>
               </div>
-              <button
-                onClick={() => { setShowForm(false); setError(""); }}
-                className="w-7 h-7 rounded-lg flex items-center justify-center"
-                style={{ color: "#4a5568" }}
-              >
-                <X className="w-4 h-4" />
+              <button onClick={() => { setShowForm(false); setError(""); }} className="button-secondary px-2.5 py-2" aria-label="Close">
+                <X className="h-4 w-4" />
               </button>
             </div>
 
-            <form onSubmit={handleAdd} className="p-5 space-y-4">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-medium" style={{ color: "#6b7a95" }}>Key</label>
-                <input
-                  type="text"
-                  required
-                  value={form.key}
-                  onChange={(e) => setForm((f) => ({ ...f, key: e.target.value }))}
-                  placeholder="user_preference / project_context / tone_of_voice…"
-                  className={INPUT_CLS}
-                  style={INPUT_STYLE}
-                  onFocus={e => (e.target.style.borderColor = "#2563eb")}
-                  onBlur={e => (e.target.style.borderColor = "#1e2640")}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-medium" style={{ color: "#6b7a95" }}>Content</label>
-                <textarea
-                  required
-                  value={form.content}
-                  onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
-                  rows={3}
-                  placeholder="The stored fact, instruction, or context…"
-                  className={`${INPUT_CLS} resize-none`}
-                  style={INPUT_STYLE}
-                  onFocus={e => (e.target.style.borderColor = "#2563eb")}
-                  onBlur={e => (e.target.style.borderColor = "#1e2640")}
-                />
-              </div>
-
+            <form onSubmit={handleAdd} className="space-y-4 p-5">
+              <Field label="Key">
+                <input type="text" required value={form.key} onChange={(e) => setForm((f) => ({ ...f, key: e.target.value }))} placeholder="brand_voice / project_context / customer_profile" className="input-premium" />
+              </Field>
+              <Field label="Content">
+                <textarea required value={form.content} onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))} rows={4} placeholder="The stored fact, instruction, or reusable context..." className="input-premium resize-none" />
+              </Field>
               {agents.length > 0 && (
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-medium" style={{ color: "#6b7a95" }}>
-                    Assign to worker <span style={{ color: "#3a4455" }}>(optional)</span>
-                  </label>
-                  <select
-                    value={form.agentId}
-                    onChange={(e) => setForm((f) => ({ ...f, agentId: e.target.value }))}
-                    className={INPUT_CLS}
-                    style={INPUT_STYLE}
-                  >
-                    <option value="">— Global (all workers) —</option>
-                    {agents.map((a) => (
-                      <option key={a.id} value={a.id}>{a.name}</option>
-                    ))}
+                <Field label="Scope">
+                  <select value={form.agentId} onChange={(e) => setForm((f) => ({ ...f, agentId: e.target.value }))} className="input-premium">
+                    <option value="">Global — all workers</option>
+                    {agents.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
                   </select>
-                </div>
+                </Field>
               )}
 
-              {error && (
-                <div className="px-3.5 py-2.5 rounded-lg text-xs" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#f87171" }}>
-                  {error}
-                </div>
-              )}
+              {error && <div className="rounded-xl border border-red-300/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-100">{error}</div>}
 
               <div className="flex gap-3 pt-1">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50"
-                  style={{ background: "#1d4ed8" }}
-                >
-                  {saving ? "Saving…" : "Save Memory"}
+                <button type="submit" disabled={saving} className="button-primary flex-1">
+                  {saving ? "Saving..." : "Save Memory"}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => { setShowForm(false); setError(""); }}
-                  className="px-4 py-2.5 rounded-lg text-sm transition-all"
-                  style={{ border: "1px solid #1e2640", color: "#6b7a95" }}
-                >
+                <button type="button" onClick={() => { setShowForm(false); setError(""); }} className="button-secondary">
                   Cancel
                 </button>
               </div>
@@ -192,78 +132,60 @@ export function MemoryManager({ initialMemories, agents }: Props) {
         </div>
       )}
 
-      {/* Memory table */}
       {memoryList.length === 0 && !showForm ? (
-        <div className="rounded-xl p-14 text-center" style={{ background: "#0b0e18", border: "1px solid #1e2640" }}>
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4"
-            style={{ background: "rgba(6,182,212,0.1)", border: "1px solid rgba(6,182,212,0.2)" }}>
-            <Brain className="w-6 h-6" style={{ color: "#06b6d4" }} />
-          </div>
-          <p className="text-sm font-semibold text-white mb-1">No memories yet</p>
-          <p className="text-xs leading-relaxed" style={{ color: "#4a5568", maxWidth: 300, margin: "4px auto 0" }}>
-            Add memories to give your AI workers persistent knowledge across tasks.
-          </p>
-        </div>
+        <EmptyState
+          icon={<Brain className="h-7 w-7" />}
+          title="No memories yet"
+          description="Add memories to give your AI workers persistent knowledge across future tasks."
+        />
       ) : (
-        <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #1e2640" }}>
-          {/* Table header */}
-          <div className="grid grid-cols-[200px_1fr_140px_40px] px-4 py-2.5"
-            style={{ background: "#0d1120", borderBottom: "1px solid #1e2640" }}>
-            <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#2d3a52" }}>Key</span>
-            <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#2d3a52" }}>Content</span>
-            <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#2d3a52" }}>Scope</span>
+        <div className="surface-panel overflow-hidden">
+          <div className="hidden border-b border-white/10 bg-white/[0.035] px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-400 lg:grid lg:grid-cols-[220px_1fr_190px_44px]">
+            <span>Key</span>
+            <span>Content</span>
+            <span>Scope</span>
             <span />
           </div>
-
-          {memoryList.map((m, i) => (
-            <div key={m.id}>
-              {/* Row */}
-              <div
-                className="grid grid-cols-[200px_1fr_140px_40px] px-4 py-3 items-center cursor-pointer transition-all group"
-                style={{
-                  background: i % 2 === 0 ? "#0b0e18" : "#0d1120",
-                  borderBottom: i < memoryList.length - 1 && expandedId !== m.id ? "1px solid #131928" : "none",
-                }}
-                onClick={() => setExpandedId(expandedId === m.id ? null : m.id)}
-              >
-                <code className="text-xs font-mono px-2 py-0.5 rounded inline-block truncate"
-                  style={{ background: "rgba(37,99,235,0.1)", color: "#60a5fa", border: "1px solid rgba(37,99,235,0.2)" }}>
-                  {m.key}
-                </code>
-                <span className="text-xs truncate pr-4" style={{ color: expandedId === m.id ? "#8b95a7" : "#4a5568" }}>
-                  {m.content}
-                </span>
-                <span className="text-xs truncate" style={{ color: "#2d3a52" }}>
-                  {m.agentName ?? "Global"}
-                </span>
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); handleDelete(m.id); }}
-                    disabled={deleting === m.id}
-                    className="p-1.5 rounded transition-all opacity-0 group-hover:opacity-100 disabled:opacity-30"
-                    style={{ color: "#4a5568" }}
-                    title="Delete memory"
-                  >
-                    <Trash2 className="w-3.5 h-3.5 hover:text-red-400" />
-                  </button>
+          <div className="divide-y divide-white/10">
+            {memoryList.map((m) => (
+              <div key={m.id}>
+                <div onClick={() => setExpandedId(expandedId === m.id ? null : m.id)} className="grid w-full cursor-pointer gap-4 px-5 py-4 text-left transition hover:bg-cyan-300/[0.035] lg:grid-cols-[220px_1fr_190px_44px] lg:items-center">
+                  <code className="truncate rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 font-mono text-xs font-bold text-cyan-100">{m.key}</code>
+                  <span className="line-clamp-2 text-sm leading-6 text-slate-300">{m.content}</span>
+                  <span className="flex items-center gap-2 text-sm font-semibold text-slate-300">
+                    {m.agentName ? <UserRound className="h-4 w-4 text-cyan-200" /> : <Globe2 className="h-4 w-4 text-cyan-200" />}
+                    {m.agentName ?? "Global"}
+                  </span>
+                  <span className="flex justify-start lg:justify-end">
+                    <button type="button" onClick={(e) => { e.stopPropagation(); handleDelete(m.id); }} disabled={deleting === m.id} className="button-secondary px-2.5 py-2" title="Delete memory">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </span>
                 </div>
+
+                {expandedId === m.id && (
+                  <div className="border-t border-white/10 bg-white/[0.025] px-5 py-4">
+                    <p className="whitespace-pre-wrap text-sm leading-7 text-white">{m.content}</p>
+                    <p className="mt-3 text-xs font-semibold text-slate-400">
+                      {m.agentName ? `Assigned to ${m.agentName}` : "Global memory available to all workers"}
+                      {m.createdAt && ` · ${new Date(m.createdAt).toLocaleString()}`}
+                    </p>
+                  </div>
+                )}
               </div>
-
-              {/* Expanded row */}
-              {expandedId === m.id && (
-                <div className="px-4 py-4" style={{ background: "#0d1120", borderBottom: i < memoryList.length - 1 ? "1px solid #131928" : "none", borderTop: "1px solid #131928" }}>
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap text-white mb-2">{m.content}</p>
-                  <p className="text-xs" style={{ color: "#2d3a52" }}>
-                    {m.agentName ? `Assigned to: ${m.agentName}` : "Global — available to all workers"}
-                    {m.createdAt && ` · ${new Date(m.createdAt).toLocaleString()}`}
-                  </p>
-                </div>
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
+    </main>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <label className="label-premium">{label}</label>
+      {children}
     </div>
   );
 }

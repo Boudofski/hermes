@@ -4,14 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Bot, ArrowRight, CheckCircle, Sparkles } from "lucide-react";
-
-const SELLING_POINTS = [
-  "Deploy in under 60 seconds",
-  "8 specialist AI worker templates",
-  "Live execution streaming",
-  "Persistent memory across tasks",
-];
+import { ArrowRight, Bot, Brain, CheckCircle2, Radio, Sparkles, Terminal, Users, Zap } from "lucide-react";
+import { OrbitalBackground } from "@/components/ui/orbital-background";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -43,141 +37,134 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex" style={{ background: "#07090f" }}>
-      {/* ── Left panel ── */}
-      <div
-        className="hidden lg:flex w-[480px] shrink-0 flex-col justify-between p-12 relative overflow-hidden"
-        style={{ background: "linear-gradient(150deg, #0a0f1e 0%, #07090f 100%)", borderRight: "1px solid #1e2640" }}
-      >
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: "radial-gradient(ellipse 60% 50% at 20% 40%, rgba(37,99,235,0.12) 0%, transparent 70%)" }}
-        />
-
-        {/* Logo */}
-        <Link href="/" className="relative flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-            <Bot className="w-4.5 h-4.5 text-white" />
+    <main className="rzg-root relative grid min-h-screen lg:grid-cols-[1.05fr_0.95fr]">
+      <OrbitalBackground dense />
+      <section className="relative hidden min-h-screen border-r border-white/10 px-10 py-10 lg:flex lg:flex-col lg:justify-between">
+        <Link href="/" className="flex items-center gap-3">
+          <div className="brand-mark h-10 w-10"><Bot className="h-5 w-5" /></div>
+          <div>
+            <p className="text-sm font-black text-white">RZG AI</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-200">Workforce Command</p>
           </div>
-          <span className="font-bold text-white text-lg">RZG AI</span>
         </Link>
 
-        {/* Copy */}
-        <div className="relative space-y-8">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium mb-4"
-              style={{ background: "rgba(37,99,235,0.12)", border: "1px solid rgba(37,99,235,0.25)", color: "#60a5fa" }}>
-              <Sparkles className="w-3 h-3" />
-              Free to start
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-3">Your AI workforce starts here.</h2>
-            <p className="text-base leading-relaxed" style={{ color: "#6b7a95" }}>
-              Create autonomous AI specialists and deploy them to handle research, content, and business workflows.
-            </p>
+        <div className="max-w-xl">
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1.5 text-xs font-bold text-cyan-100">
+            <Sparkles className="h-3.5 w-3.5" />
+            Free to start
           </div>
-          <div className="space-y-3">
-            {SELLING_POINTS.map((p) => (
-              <div key={p} className="flex items-center gap-2.5 text-sm" style={{ color: "#8b95a7" }}>
-                <CheckCircle className="w-4 h-4 text-blue-500 shrink-0" />
-                {p}
+          <h2 className="text-5xl font-black leading-tight tracking-tight text-white">Create your first AI employee roster.</h2>
+          <p className="mt-5 text-lg leading-8 text-slate-300">
+            Start with specialist workers for research, content, SEO, sales, and operations. Then assign real tasks and watch them execute.
+          </p>
+          <div className="mt-8 grid grid-cols-2 gap-3">
+            {[
+              [Users, "Worker directory"],
+              [Zap, "Mission control"],
+              [Radio, "Live execution"],
+              [Brain, "Memory vault"],
+            ].map(([Icon, text]) => (
+              <div key={text as string} className="rounded-2xl border border-white/10 bg-white/[0.045] p-4">
+                <Icon className="mb-3 h-5 w-5 text-cyan-200" />
+                <p className="text-sm font-bold text-white">{text as string}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <p className="relative text-xs" style={{ color: "#2d3a52" }}>© 2026 RZG AI</p>
-      </div>
-
-      {/* ── Right panel / form ── */}
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-[360px]">
-          {/* Mobile logo */}
-          <Link href="/" className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-7 h-7 rounded-md bg-blue-600 flex items-center justify-center">
-              <Bot className="w-4 h-4 text-white" />
+        <div className="console-shell">
+          <div className="console-header">
+            <div className="flex items-center gap-2">
+              <Terminal className="h-4 w-4 text-cyan-200" />
+              <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-200">Provisioning</span>
             </div>
-            <span className="font-bold text-white">RZG AI</span>
+            <span className="badge badge-blue">Ready</span>
+          </div>
+          <div className="console-body p-4">
+            {["Workspace created", "Templates available", "Adapter online", "Awaiting first worker"].map((line) => (
+              <div key={line} className="exec-line">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-200" />
+                <span>{line}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="relative flex items-center justify-center px-5 py-10 sm:px-8">
+        <div className="w-full max-w-md">
+          <Link href="/" className="mb-10 flex items-center gap-3 lg:hidden">
+            <div className="brand-mark h-9 w-9"><Bot className="h-5 w-5" /></div>
+            <span className="text-sm font-black text-white">RZG AI</span>
           </Link>
 
-          <h1 className="text-2xl font-bold text-white mb-1">Create your account</h1>
-          <p className="text-sm mb-8" style={{ color: "#6b7a95" }}>Start deploying AI workers for free</p>
+          <div className="surface-panel p-6 sm:p-8">
+            <p className="eyebrow mb-3">New Workspace</p>
+            <h1 className="text-3xl font-black tracking-tight text-white">Create your account</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-300">Start deploying AI workers for real business workflows.</p>
 
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "#6b7a95" }}>Full name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                autoComplete="name"
-                placeholder="Jane Smith"
-                className="w-full px-3.5 py-2.5 rounded-lg text-sm text-white outline-none transition-all"
-                style={{ background: "#0d1120", border: "1px solid #1e2640", caretColor: "#3b82f6" }}
-                onFocus={e => (e.target.style.borderColor = "#2563eb")}
-                onBlur={e => (e.target.style.borderColor = "#1e2640")}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "#6b7a95" }}>Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-                placeholder="you@company.com"
-                className="w-full px-3.5 py-2.5 rounded-lg text-sm text-white outline-none transition-all"
-                style={{ background: "#0d1120", border: "1px solid #1e2640", caretColor: "#3b82f6" }}
-                onFocus={e => (e.target.style.borderColor = "#2563eb")}
-                onBlur={e => (e.target.style.borderColor = "#1e2640")}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "#6b7a95" }}>Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={8}
-                autoComplete="new-password"
-                placeholder="Minimum 8 characters"
-                className="w-full px-3.5 py-2.5 rounded-lg text-sm text-white outline-none transition-all"
-                style={{ background: "#0d1120", border: "1px solid #1e2640", caretColor: "#3b82f6" }}
-                onFocus={e => (e.target.style.borderColor = "#2563eb")}
-                onBlur={e => (e.target.style.borderColor = "#1e2640")}
-              />
-            </div>
-
-            {error && (
-              <div className="px-3.5 py-2.5 rounded-lg text-xs" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#f87171" }}>
-                {error}
+            <form onSubmit={handleSubmit} className="mt-7 space-y-4">
+              <div className="space-y-2">
+                <label className="label-premium">Full name</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  autoComplete="name"
+                  placeholder="Jane Smith"
+                  className="input-premium"
+                />
               </div>
-            )}
+              <div className="space-y-2">
+                <label className="label-premium">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  placeholder="you@company.com"
+                  className="input-premium"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="label-premium">Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  placeholder="Minimum 8 characters"
+                  className="input-premium"
+                />
+              </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white transition-all mt-1 disabled:opacity-50"
-              style={{ background: "#1d4ed8" }}
-            >
-              {loading ? "Creating account…" : <><span>Create Free Account</span><ArrowRight className="w-3.5 h-3.5" /></>}
-            </button>
-          </form>
+              {error && (
+                <div className="rounded-xl border border-red-300/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-100">
+                  {error}
+                </div>
+              )}
 
-          <p className="text-xs mt-4 text-center" style={{ color: "#3a4455" }}>
-            By creating an account you agree to our Terms of Service.
-          </p>
+              <button type="submit" disabled={loading} className="button-primary w-full">
+                {loading ? "Creating account..." : <>Create Free Account <ArrowRight className="h-4 w-4" /></>}
+              </button>
+            </form>
 
-          <p className="text-sm mt-5 text-center" style={{ color: "#6b7a95" }}>
-            Already have an account?{" "}
-            <Link href="/login" className="text-blue-400 hover:text-blue-300 transition-colors font-medium">
-              Sign in
-            </Link>
-          </p>
+            <p className="mt-4 text-center text-xs leading-5 text-slate-400">
+              By creating an account you agree to the platform terms.
+            </p>
+            <p className="mt-5 text-center text-sm text-slate-300">
+              Already have an account?{" "}
+              <Link href="/login" className="font-bold text-cyan-100 hover:text-white">
+                Sign in
+              </Link>
+            </p>
+          </div>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

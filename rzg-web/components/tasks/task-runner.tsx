@@ -143,18 +143,18 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
   return (
     <div className="space-y-4">
       {/* ── Execution console header ── */}
-      <div className="exec-console">
+      <div className="console-shell">
         {/* Console title bar */}
-        <div className="panel-header-dark justify-between">
+        <div className="console-header">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
               <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
               <div className="w-3 h-3 rounded-full bg-[#28c840]" />
             </div>
-            <div className="flex items-center gap-2 px-3 py-0.5 rounded bg-white/4 border border-white/6 ml-2">
-              <Terminal className="w-3 h-3 text-muted-foreground/40" />
-              <span className="text-xs font-mono text-muted-foreground/50">agent-execution</span>
+            <div className="ml-2 flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1">
+              <Terminal className="h-3 w-3 text-cyan-200" />
+              <span className="font-mono text-xs text-slate-300">agent-execution</span>
             </div>
           </div>
 
@@ -162,27 +162,27 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
             {running && (
               <div className="flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse-dot" />
-                <span className="text-xs font-mono text-blue-400">Live</span>
+                <span className="font-mono text-xs text-cyan-100">Live</span>
               </div>
             )}
             {toolEvents.length > 0 && !running && (
               <div className="flex items-center gap-1.5">
-                <Wrench className="w-3 h-3 text-violet-400" />
-                <span className="text-xs text-muted-foreground/50">{Math.floor(toolEvents.length / 2)} tool calls</span>
+                <Wrench className="h-3 w-3 text-cyan-200" />
+                <span className="text-xs font-semibold text-slate-300">{Math.floor(toolEvents.length / 2)} tool calls</span>
               </div>
             )}
           </div>
         </div>
 
         {/* Controls bar */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-[#131928] bg-[#06080e] flex-wrap">
+        <div className="flex flex-wrap items-center gap-3 border-b border-white/10 bg-white/[0.025] px-4 py-3">
           {!running ? (
             <>
               {(isFailed || isCancelled) ? (
                 <button
                   onClick={handleRun}
                   disabled={!agent}
-                  className="flex items-center gap-2 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
+                  className="button-primary px-3 py-2 text-xs"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   Retry
@@ -191,7 +191,7 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
                 <button
                   onClick={handleRun}
                   disabled={!agent}
-                  className="flex items-center gap-2 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
+                  className="button-primary px-3 py-2 text-xs"
                 >
                   <Play className="w-3.5 h-3.5" />
                   Run Now
@@ -200,7 +200,7 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
               {hasResult && !(isFailed || isCancelled) && (
                 <button
                   onClick={handleRun}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs border border-border text-muted-foreground hover:text-foreground transition-colors"
+                  className="button-secondary px-3 py-2 text-xs"
                 >
                   <RefreshCw className="w-3 h-3" />
                   Re-run
@@ -210,7 +210,7 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
           ) : (
             <button
               onClick={handleStop}
-              className="flex items-center gap-2 px-3.5 py-1.5 bg-red-600/80 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition-colors"
+              className="button-danger px-3 py-2 text-xs"
             >
               <Square className="w-3.5 h-3.5" />
               Stop
@@ -220,13 +220,13 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
           <StatusPill status={runStatus} running={running} />
 
           {!agent && (
-            <span className="text-xs text-muted-foreground">No AI worker assigned</span>
+            <span className="text-xs font-semibold text-slate-300">No AI worker assigned</span>
           )}
         </div>
 
         {/* Log lines */}
         {(logs.length > 0 || running) && (
-          <div className="p-4 max-h-80 overflow-y-auto space-y-0.5 terminal-row">
+          <div className="console-body max-h-96 space-y-1 overflow-y-auto p-4">
             {logs.map((log, i) => (
               <LogLine key={i} log={log} />
             ))}
@@ -243,11 +243,11 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
         {/* Empty / idle state inside console */}
         {!running && logs.length === 0 && !finalResponse && !error && (
           <div className="p-10 text-center">
-            <div className="w-9 h-9 rounded-xl bg-white/4 border border-white/6 flex items-center justify-center mx-auto mb-3">
-              <Activity className="w-4.5 h-4.5 text-muted-foreground/30" />
+            <div className="brand-mark mx-auto mb-3 h-10 w-10">
+              <Activity className="h-5 w-5" />
             </div>
-            <p className="text-xs text-muted-foreground/50">
-              No runs yet — click <span className="text-white">Run Now</span> to execute
+            <p className="text-sm font-semibold text-slate-300">
+              No runs yet. Click <span className="text-white">Run Now</span> to execute.
             </p>
           </div>
         )}
@@ -255,28 +255,26 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
 
       {/* ── Error panel ── */}
       {error && (
-        <div className="flex items-start gap-3 p-4 rounded-xl bg-red-500/6 border border-red-500/20">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 bg-red-500/12">
-            <AlertCircle className="w-3.5 h-3.5 text-red-400" />
+        <div className="flex items-start gap-3 rounded-2xl border border-red-300/30 bg-red-500/10 p-4">
+          <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-red-500/20">
+            <AlertCircle className="h-4 w-4 text-red-100" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-red-400">Run failed</p>
-            <p className="text-xs mt-0.5 break-words text-muted-foreground">{error}</p>
+            <p className="text-sm font-bold text-red-100">Run failed</p>
+            <p className="mt-1 break-words text-sm leading-6 text-slate-200">{error}</p>
           </div>
         </div>
       )}
 
       {/* ── Final output panel ── */}
       {finalResponse && (
-        <div className="panel rounded-xl overflow-hidden">
-          <div className="panel-header">
+        <div className="surface-card overflow-hidden">
+          <div className="flex items-center gap-2 border-b border-white/10 px-5 py-4">
             <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
-            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
-              Output
-            </span>
+            <span className="eyebrow">Final Output</span>
           </div>
           <div className="p-5">
-            <pre className="text-sm whitespace-pre-wrap font-sans leading-relaxed">{finalResponse}</pre>
+            <pre className="whitespace-pre-wrap font-sans text-sm leading-7 text-slate-100">{finalResponse}</pre>
           </div>
         </div>
       )}
@@ -296,14 +294,14 @@ function RunHistory({ runs }: { runs: HistoryRun[] }) {
   const [expandedRun, setExpandedRun] = useState<string | null>(null);
 
   return (
-    <div className="panel rounded-xl overflow-hidden">
+    <div className="surface-card overflow-hidden">
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="w-full panel-header hover:bg-white/2 transition-colors"
+        className="flex w-full items-center gap-2 border-b border-white/10 px-5 py-4 transition hover:bg-white/[0.035]"
       >
-        <Clock className="w-3.5 h-3.5 text-muted-foreground/50" />
-        <span className="flex-1 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
+        <Clock className="h-4 w-4 text-cyan-200" />
+        <span className="eyebrow flex-1 text-left">
           Run History
         </span>
         <span className="badge badge-muted mr-1">{runs.length}</span>
@@ -313,9 +311,9 @@ function RunHistory({ runs }: { runs: HistoryRun[] }) {
       </button>
 
       {expanded && (
-        <div className="divide-y divide-border/60">
+        <div className="divide-y divide-white/10">
           {runs.map((run, i) => (
-            <div key={run.id} className="p-3 space-y-2 bg-card/40">
+            <div key={run.id} className="space-y-2 bg-white/[0.02] p-4">
               <button
                 type="button"
                 onClick={() => setExpandedRun(expandedRun === run.id ? null : run.id)}
@@ -323,8 +321,8 @@ function RunHistory({ runs }: { runs: HistoryRun[] }) {
               >
                 <HistoryDot status={run.status} />
                 <div className="flex-1 min-w-0">
-                  <span className="text-xs font-medium">Run #{runs.length - i}</span>
-                  <span className="text-xs text-muted-foreground/50 ml-2">
+                  <span className="text-sm font-bold text-white">Run #{runs.length - i}</span>
+                  <span className="ml-2 text-xs font-medium text-slate-400">
                     {run.createdAt ? new Date(run.createdAt).toLocaleString() : "—"}
                   </span>
                 </div>
@@ -337,16 +335,16 @@ function RunHistory({ runs }: { runs: HistoryRun[] }) {
               </button>
 
               {expandedRun === run.id && run.finalResponse && (
-                <div className="ml-5 panel-dark rounded-lg p-3">
-                  <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed line-clamp-10 text-muted-foreground">
+                <div className="ml-5 rounded-xl border border-white/10 bg-slate-950/60 p-3">
+                  <pre className="line-clamp-10 whitespace-pre-wrap font-sans text-xs leading-6 text-slate-300">
                     {run.finalResponse}
                   </pre>
                 </div>
               )}
 
               {expandedRun === run.id && run.errorMessage && (
-                <div className="ml-5 rounded-lg p-3 bg-red-500/6 border border-red-500/20">
-                  <p className="text-xs text-red-400">{run.errorMessage}</p>
+                <div className="ml-5 rounded-xl border border-red-300/30 bg-red-500/10 p-3">
+                  <p className="text-xs text-red-100">{run.errorMessage}</p>
                 </div>
               )}
             </div>

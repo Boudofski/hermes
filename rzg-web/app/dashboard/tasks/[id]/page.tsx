@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { tasks, taskRuns, taskLogs, agents, workspaces } from "@/lib/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Bot, FileText } from "lucide-react";
+import { ArrowLeft, Bot, FileText, Terminal } from "lucide-react";
 import Link from "next/link";
 import { TaskRunner } from "@/components/tasks/task-runner";
 import { TaskActions } from "@/components/tasks/task-actions";
@@ -52,82 +52,69 @@ export default async function TaskDetailPage({ params }: Params) {
         .orderBy(taskLogs.createdAt)
     : [];
 
-  const statusBadgeClass: Record<string, string> = {
-    pending:   "badge badge-muted",
-    running:   "badge badge-yellow",
-    completed: "badge badge-green",
-    failed:    "badge badge-red",
-    cancelled: "badge badge-muted",
-  };
-
   return (
-    <div className="h-full flex flex-col">
-      {/* Command panel — sticky header */}
-      <div className="px-8 py-5 border-b border-border bg-background/95 backdrop-blur-sm shrink-0">
-        <div className="flex items-center gap-4">
-          <Link
-            href="/dashboard/tasks"
-            className="w-8 h-8 rounded-lg flex items-center justify-center border border-border text-muted-foreground hover:text-foreground hover:border-border/80 transition-colors shrink-0"
-          >
+    <div className="min-h-screen pb-24 md:pb-0">
+      <div className="border-b border-white/10 bg-[#02050b]/70 px-5 py-5 backdrop-blur-xl sm:px-8">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex min-w-0 items-center gap-4">
+            <Link href="/dashboard/tasks" className="button-secondary px-3 py-2">
             <ArrowLeft className="w-4 h-4" />
-          </Link>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-lg font-bold truncate">{task.name}</h1>
-              <span className={statusBadgeClass[task.status] ?? "badge badge-muted"}>
-                {task.status}
-              </span>
-            </div>
+            </Link>
+            <div className="min-w-0">
+              <p className="eyebrow">Mission Detail</p>
+              <div className="mt-1 flex flex-wrap items-center gap-3">
+                <h1 className="truncate text-2xl font-black tracking-tight text-white">{task.name}</h1>
+                <span className={`badge ${task.status === "completed" ? "badge-green" : task.status === "running" ? "badge-yellow" : task.status === "failed" ? "badge-red" : "badge-muted"}`}>
+                  {task.status}
+                </span>
+              </div>
             {agent && (
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <Bot className="w-3 h-3 text-blue-400" />
-                <span className="text-xs text-muted-foreground">{agent.name}</span>
-                <span className="text-muted-foreground/30">·</span>
-                <code className="text-xs text-muted-foreground/70 font-mono">
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-300">
+                <Bot className="h-4 w-4 text-cyan-200" />
+                <span>{agent.name}</span>
+                <span className="text-slate-600">·</span>
+                <code className="font-mono text-xs text-cyan-100">
                   {agent.model.split("/").pop()}
                 </code>
               </div>
             )}
+            </div>
           </div>
-
           <TaskActions taskId={task.id} />
         </div>
       </div>
 
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-8 py-6 space-y-5">
-          {/* Prompt card */}
-          <div className="panel rounded-xl">
-            <div className="panel-header">
-              <FileText className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
-                Task Prompt
-              </span>
-            </div>
-            <div className="p-4">
-              <p className="text-sm leading-relaxed">{task.prompt}</p>
-            </div>
+      <div className="mx-auto max-w-6xl space-y-5 p-5 sm:p-8">
+        <div className="surface-card overflow-hidden">
+          <div className="flex items-center gap-2 border-b border-white/10 px-5 py-4">
+            <FileText className="h-4 w-4 text-cyan-200" />
+            <span className="eyebrow">Prompt Panel</span>
           </div>
-
-          {/* Execution console */}
-          <TaskRunner
-            task={{ id: task.id, name: task.name, status: task.status }}
-            agent={agent ? { id: agent.id, name: agent.name } : null}
-            initialRun={latestRun}
-            initialLogs={logs}
-            runHistory={recentRuns.slice(1).map((r) => ({
-              id: r.id,
-              status: r.status,
-              createdAt: r.createdAt,
-              completedAt: r.completedAt,
-              finalResponse: r.finalResponse,
-              errorMessage: r.errorMessage,
-            }))}
-          />
+          <div className="p-5">
+            <p className="whitespace-pre-wrap text-sm leading-7 text-slate-100">{task.prompt}</p>
+          </div>
         </div>
-      </div>
+
+        <div className="flex items-center gap-2 px-1">
+          <Terminal className="h-4 w-4 text-cyan-200" />
+          <p className="eyebrow">Execution Console</p>
+        </div>
+
+        <TaskRunner
+          task={{ id: task.id, name: task.name, status: task.status }}
+          agent={agent ? { id: agent.id, name: agent.name } : null}
+          initialRun={latestRun}
+          initialLogs={logs}
+          runHistory={recentRuns.slice(1).map((r) => ({
+            id: r.id,
+            status: r.status,
+            createdAt: r.createdAt,
+            completedAt: r.completedAt,
+            finalResponse: r.finalResponse,
+            errorMessage: r.errorMessage,
+          }))}
+        />
+            </div>
     </div>
   );
 }

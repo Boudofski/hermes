@@ -2,8 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import { memories, agents, workspaces } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { Brain } from "lucide-react";
+import { Brain, Database, LockKeyhole } from "lucide-react";
 import { MemoryManager } from "@/components/memory/memory-manager";
+import { PageTitle } from "@/components/ui/page-title";
 
 export const metadata = { title: "Memory — RZG AI" };
 
@@ -28,37 +29,46 @@ export default async function MemoryPage() {
       .where(eq(memories.workspaceId, workspace.id))
       .orderBy(memories.createdAt),
 
-    db
-      .select({ id: agents.id, name: agents.name })
-      .from(agents)
-      .where(eq(agents.workspaceId, workspace.id)),
+    db.select({ id: agents.id, name: agents.name }).from(agents).where(eq(agents.workspaceId, workspace.id)),
   ]);
 
   return (
-    <div className="p-8 max-w-4xl space-y-8">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "#0e4a52" }}>
-          Knowledge Base
-        </p>
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-            style={{ background: "rgba(6,182,212,0.1)", border: "1px solid rgba(6,182,212,0.2)" }}>
-            <Brain className="w-4.5 h-4.5" style={{ color: "#06b6d4" }} />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white">Memory</h1>
-            <p className="text-sm" style={{ color: "#4a5568" }}>Persistent knowledge for your AI workers</p>
-          </div>
-        </div>
-      </div>
-
-      <MemoryManager
-        initialMemories={memoryList.map((m) => ({
-          ...m,
-          createdAt: m.createdAt?.toISOString() ?? null,
-        }))}
-        agents={agentList}
+    <div className="min-h-screen pb-24 md:pb-0">
+      <PageTitle
+        eyebrow="Memory Vault"
+        title="Persistent Knowledge"
+        description="Store durable context for all workers or attach specific memories to individual AI employees."
       />
+
+      <div className="grid gap-6 p-5 sm:p-8 xl:grid-cols-[360px_1fr]">
+        <aside className="space-y-4">
+          <div className="surface-card p-5">
+            <div className="brand-mark mb-4 h-12 w-12"><Brain className="h-6 w-6" /></div>
+            <h2 className="text-xl font-bold text-white">Memory layer</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              Global memories are available across the workspace. Worker-specific memories focus a single AI employee.
+            </p>
+          </div>
+          <div className="metal-panel p-5">
+            <Database className="mb-4 h-7 w-7 text-cyan-200" />
+            <p className="font-bold text-white">{memoryList.length} saved entries</p>
+            <p className="mt-2 text-sm leading-6 text-slate-300">Every entry here comes from your database, not generated sample data.</p>
+          </div>
+          <div className="metal-panel p-5">
+            <LockKeyhole className="mb-4 h-7 w-7 text-cyan-200" />
+            <p className="font-bold text-white">Operational context</p>
+            <p className="mt-2 text-sm leading-6 text-slate-300">Use memory for preferences, brand voice, project facts, constraints, and reusable instructions.</p>
+          </div>
+        </aside>
+
+        <MemoryManager
+          initialMemories={memoryList.map((m) => ({
+            ...m,
+            createdAt: m.createdAt?.toISOString() ?? null,
+          }))}
+          agents={agentList}
+        />
+      </div>
     </div>
   );
 }

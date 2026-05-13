@@ -1,14 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
-import { LayoutDashboard, Bot, ListTodo, Brain, LogOut } from "lucide-react";
+import { Bot, Brain, LayoutDashboard, ListTodo, LogOut, Radio, Users } from "lucide-react";
 
 const NAV = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
-  { href: "/dashboard/agents", label: "AI Workers", icon: Bot, exact: false },
+  { href: "/dashboard/agents", label: "AI Workers", icon: Users, exact: false },
   { href: "/dashboard/tasks", label: "Tasks", icon: ListTodo, exact: false },
   { href: "/dashboard/memory", label: "Memory", icon: Brain, exact: false },
 ];
@@ -29,66 +28,64 @@ export function Sidebar() {
   }
 
   return (
-    <aside
-      className="w-52 shrink-0 flex flex-col h-screen sticky top-0"
-      style={{ background: "#07090f", borderRight: "1px solid #1a2035" }}
-    >
-      {/* Logo */}
-      <div className="px-4 h-13 flex items-center" style={{ borderBottom: "1px solid #1a2035" }}>
-        <Link href="/dashboard" className="flex items-center gap-2.5 py-3.5">
-          <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
-            <Bot className="w-3.5 h-3.5 text-white" />
-          </div>
-          <span className="font-bold text-sm text-white tracking-tight">RZG AI</span>
-        </Link>
-      </div>
+    <>
+    <aside className="sticky top-0 z-30 hidden h-screen w-72 shrink-0 flex-col border-r border-white/10 bg-[#030712]/90 p-4 backdrop-blur-xl md:flex">
+      <Link href="/dashboard" className="mb-6 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+        <div className="brand-mark h-11 w-11">
+          <Bot className="h-5 w-5" />
+        </div>
+        <div className="min-w-0">
+          <p className="font-black tracking-wide text-white">RZG AI</p>
+          <p className="truncate text-[11px] font-bold uppercase tracking-[0.18em] text-cyan-200">Command Center</p>
+        </div>
+      </Link>
 
-      {/* Nav section label */}
-      <div className="px-4 pt-5 pb-1.5">
-        <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#2d3a52" }}>
+      <div className="mb-4 rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.045] p-4">
+        <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-cyan-100">
+          <Radio className="h-3.5 w-3.5" />
           Workspace
-        </span>
+        </div>
+        <p className="text-sm font-bold text-white">AI Operations</p>
+        <p className="mt-1 text-xs leading-5 text-slate-300">Workers, tasks, memory, and execution streams.</p>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 px-3 pb-4 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 space-y-1">
         {NAV.map(({ href, label, icon: Icon, exact }) => {
           const active = isActive(href, exact);
           return (
-            <Link
-              key={href}
-              href={href}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all"
-              style={active
-                ? { background: "rgba(37,99,235,0.12)", color: "#60a5fa" }
-                : { color: "#4a5568" }
-              }
-              onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLElement).style.color = "#8b95a7"; (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; } }}
-              onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLElement).style.color = "#4a5568"; (e.currentTarget as HTMLElement).style.background = ""; } }}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              <span className={active ? "font-medium" : ""}>{label}</span>
-              {active && (
-                <span className="ml-auto w-1 h-3.5 rounded-full" style={{ background: "#3b82f6", opacity: 0.7 }} />
-              )}
+            <Link key={href} href={href} className={`nav-item ${active ? "active" : ""}`}>
+              <Icon className="h-4 w-4 shrink-0" />
+              <span>{label}</span>
+              {active && <span className="ml-auto h-2 w-2 rounded-full bg-cyan-200 shadow-[0_0_16px_rgba(103,232,249,0.8)]" />}
             </Link>
           );
         })}
       </nav>
 
-      {/* Bottom section */}
-      <div className="px-3 py-4" style={{ borderTop: "1px solid #1a2035" }}>
-        <button
-          onClick={signOut}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all"
-          style={{ color: "#3a4455" }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#8b95a7"; (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "#3a4455"; (e.currentTarget as HTMLElement).style.background = ""; }}
-        >
-          <LogOut className="w-4 h-4 shrink-0" />
+      <div className="border-t border-white/10 pt-4">
+        <Link href="/dashboard/agents/new" className="button-primary mb-3 w-full">
+          <Bot className="h-4 w-4" />
+          Create Worker
+        </Link>
+        <button type="button" onClick={signOut} className="button-secondary w-full justify-start">
+          <LogOut className="h-4 w-4" />
           Sign out
         </button>
       </div>
     </aside>
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#030712]/95 px-2 py-2 backdrop-blur-xl md:hidden">
+      <nav className="grid grid-cols-4 gap-1">
+        {NAV.map(({ href, label, icon: Icon, exact }) => {
+          const active = isActive(href, exact);
+          return (
+            <Link key={href} href={href} className={`flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[11px] font-bold ${active ? "bg-cyan-300/10 text-cyan-100" : "text-slate-300"}`}>
+              <Icon className="h-4 w-4" />
+              <span>{label.split(" ")[0]}</span>
+            </Link>
+          );
+        })}
+      </nav>
+    </div>
+    </>
   );
 }

@@ -1,32 +1,25 @@
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
-import { tasks, agents, workspaces } from "@/lib/db/schema";
+import { agents, tasks, workspaces } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 import Link from "next/link";
-import { CheckCircle2, Clock, AlertCircle, ListTodo, ArrowRight } from "lucide-react";
+import { ArrowRight, Bot, CalendarClock, ListTodo, Plus } from "lucide-react";
 import { NewTaskButton } from "@/components/tasks/new-task-button";
+import { CommandButton } from "@/components/ui/command-button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageTitle } from "@/components/ui/page-title";
+import { StatusBadge } from "@/components/ui/status-badge";
 
 export const metadata = { title: "Tasks — RZG AI" };
 
-export default async function TasksPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ agentId?: string }>;
-}) {
+export default async function TasksPage({ searchParams }: { searchParams: Promise<{ agentId?: string }> }) {
   const { agentId: preselectedAgentId } = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const [workspace] = await db
-    .select()
-    .from(workspaces)
-    .where(eq(workspaces.ownerId, user!.id))
-    .limit(1);
+  const [workspace] = await db.select().from(workspaces).where(eq(workspaces.ownerId, user!.id)).limit(1);
 
-  const agentList = await db
-    .select()
-    .from(agents)
-    .where(eq(agents.workspaceId, workspace.id));
+  const agentList = await db.select().from(agents).where(eq(agents.workspaceId, workspace.id));
 
   const taskList = await db
     .select({
@@ -45,109 +38,65 @@ export default async function TasksPage({
     .orderBy(desc(tasks.createdAt));
 
   return (
-    <div className="p-8 max-w-5xl space-y-8">
-      {/* Header */}
-      <div className="flex items-end justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "#4a2a8a" }}>
-            Automation
-          </p>
-          <h1 className="text-2xl font-bold text-white">Tasks</h1>
-          <p className="text-sm mt-0.5" style={{ color: "#4a5568" }}>
-            {taskList.length} task{taskList.length !== 1 ? "s" : ""}
-          </p>
-        </div>
-        <NewTaskButton agents={agentList} defaultAgentId={preselectedAgentId} />
+    <div className="min-h-screen pb-24 md:pb-0">
+      <PageTitle
+        eyebrow="Mission Control"
+        title="Tasks"
+        description={`${taskList.length} mission${taskList.length !== 1 ? "s" : ""} assigned to AI workers. Create, inspect, and run executions from here.`}
+        action={<NewTaskButton agents={agentList} defaultAgentId={preselectedAgentId} />}
+      />
+
+      <div className="p-5 sm:p-8">
+        {taskList.length === 0 ? (
+          <EmptyState
+            icon={<ListTodo className="h-7 w-7" />}
+            title="No tasks yet"
+            description={agentList.length === 0 ? "Create an AI worker first, then assign it missions." : "Create a mission and run it with an AI worker."}
+            action={
+              agentList.length === 0 ? (
+                <CommandButton href="/dashboard/agents/new"><Plus className="h-4 w-4" /> Create AI Worker</CommandButton>
+              ) : (
+                <NewTaskButton agents={agentList} defaultAgentId={preselectedAgentId} />
+              )
+            }
+          />
+        ) : (
+          <div className="surface-panel overflow-hidden">
+            <div className="hidden border-b border-white/10 bg-white/[0.035] px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-400 lg:grid lg:grid-cols-[1fr_210px_150px_130px_40px]">
+              <span>Mission</span>
+              <span>Worker</span>
+              <span>Status</span>
+              <span>Last Run</span>
+              <span />
+            </div>
+            <div className="divide-y divide-white/10">
+              {taskList.map((task) => (
+                <Link key={task.id} href={`/dashboard/tasks/${task.id}`} className="grid gap-4 px-5 py-5 transition hover:bg-cyan-300/[0.035] lg:grid-cols-[1fr_210px_150px_130px_40px] lg:items-center">
+                  <div className="min-w-0">
+                    <div className="mb-2 flex items-center gap-2 lg:hidden">
+                      <StatusBadge status={task.status} />
+                    </div>
+                    <p className="truncate text-base font-black text-white">{task.name}</p>
+                    <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-400">{task.prompt}</p>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
+                    <Bot className="h-4 w-4 text-cyan-200" />
+                    <span className="truncate">{task.agentName}</span>
+                  </div>
+                  <div className="hidden lg:block">
+                    <StatusBadge status={task.status} />
+                  </div>
+                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-300">
+                    <CalendarClock className="h-4 w-4 text-slate-500" />
+                    {task.lastRunAt ? new Date(task.lastRunAt).toLocaleDateString() : "Never"}
+                  </div>
+                  <ArrowRight className="hidden h-4 w-4 text-slate-500 lg:block" />
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-
-      {taskList.length === 0 ? (
-        <div className="rounded-xl p-14 text-center" style={{ background: "#0b0e18", border: "1px solid #1e2640" }}>
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4"
-            style={{ background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }}>
-            <ListTodo className="w-6 h-6" style={{ color: "#8b5cf6" }} />
-          </div>
-          <p className="text-sm font-semibold text-white mb-1">No tasks yet</p>
-          <p className="text-xs mb-5" style={{ color: "#4a5568" }}>
-            {agentList.length === 0
-              ? "Create an AI worker first, then assign it tasks."
-              : "Create a task and run it with an AI worker."}
-          </p>
-          {agentList.length === 0 ? (
-            <Link
-              href="/dashboard/agents/new"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white"
-              style={{ background: "#1d4ed8" }}
-            >
-              Create AI Worker
-            </Link>
-          ) : (
-            <NewTaskButton agents={agentList} defaultAgentId={preselectedAgentId} />
-          )}
-        </div>
-      ) : (
-        <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #1e2640" }}>
-          {/* Table header */}
-          <div className="grid grid-cols-[1fr_140px_110px_100px_40px] gap-0 px-4 py-2.5"
-            style={{ background: "#0d1120", borderBottom: "1px solid #1e2640" }}>
-            <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#2d3a52" }}>Task</span>
-            <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#2d3a52" }}>Worker</span>
-            <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#2d3a52" }}>Status</span>
-            <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#2d3a52" }}>Last Run</span>
-            <span />
-          </div>
-
-          {/* Rows */}
-          {taskList.map((task, i) => (
-            <Link
-              key={task.id}
-              href={`/dashboard/tasks/${task.id}`}
-              className="grid grid-cols-[1fr_140px_110px_100px_40px] gap-0 px-4 py-3 group items-center transition-all"
-              style={{
-                background: i % 2 === 0 ? "#0b0e18" : "#0d1120",
-                borderBottom: i < taskList.length - 1 ? "1px solid #131928" : "none",
-              }}
-            >
-              <div className="min-w-0 pr-4">
-                <p className="text-sm font-medium text-white truncate group-hover:text-blue-300 transition-colors">
-                  {task.name}
-                </p>
-                <p className="text-xs truncate mt-0.5" style={{ color: "#2d3a52" }}>{task.prompt}</p>
-              </div>
-              <div className="min-w-0 pr-2">
-                <span className="text-xs truncate block" style={{ color: "#4a5568" }}>{task.agentName}</span>
-              </div>
-              <div>
-                <StatusBadge status={task.status} />
-              </div>
-              <div>
-                <span className="text-xs" style={{ color: "#2d3a52" }}>
-                  {task.lastRunAt ? new Date(task.lastRunAt).toLocaleDateString() : "Never"}
-                </span>
-              </div>
-              <div className="flex justify-end">
-                <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: "#3a4455" }} />
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
     </div>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const cfg: Record<string, { label: string; icon: typeof CheckCircle2; color: string; bg: string }> = {
-    completed: { label: "Completed", icon: CheckCircle2, color: "#22c55e", bg: "rgba(34,197,94,0.1)" },
-    running:   { label: "Running",   icon: Clock,         color: "#f59e0b", bg: "rgba(245,158,11,0.1)" },
-    failed:    { label: "Failed",    icon: AlertCircle,   color: "#ef4444", bg: "rgba(239,68,68,0.1)" },
-    pending:   { label: "Pending",   icon: Clock,         color: "#4a5568", bg: "rgba(74,85,104,0.1)" },
-    cancelled: { label: "Cancelled", icon: Clock,         color: "#4a5568", bg: "rgba(74,85,104,0.1)" },
-  };
-  const { label, icon: Icon, color, bg } = cfg[status] ?? cfg.pending;
-  return (
-    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium" style={{ color, background: bg }}>
-      <Icon className="w-3 h-3" />
-      {label}
-    </span>
   );
 }

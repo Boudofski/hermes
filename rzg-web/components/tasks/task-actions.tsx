@@ -26,8 +26,7 @@ export function TaskActions({ taskId }: { taskId: string }) {
       <button
         type="button"
         onClick={() => setConfirm(true)}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all"
-        style={{ border: "1px solid #1e2640", color: "#4a5568" }}
+        className="button-danger px-3 py-2 text-xs"
       >
         <Trash2 className="w-3.5 h-3.5" />
         Delete
@@ -36,22 +35,20 @@ export function TaskActions({ taskId }: { taskId: string }) {
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-xs" style={{ color: "#4a5568" }}>Delete this task?</span>
+    <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-red-300/30 bg-red-500/10 p-2">
+      <span className="px-2 text-xs font-semibold text-red-100">Delete this task?</span>
       <button
         type="button"
         onClick={handleDelete}
         disabled={deleting}
-        className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all disabled:opacity-50"
-        style={{ background: "#dc2626" }}
+        className="button-danger px-3 py-2 text-xs"
       >
         {deleting ? "Deleting…" : "Yes, delete"}
       </button>
       <button
         type="button"
         onClick={() => setConfirm(false)}
-        className="px-3 py-1.5 rounded-lg text-xs transition-all"
-        style={{ border: "1px solid #1e2640", color: "#6b7a95" }}
+        className="button-secondary px-3 py-2 text-xs"
       >
         Cancel
       </button>

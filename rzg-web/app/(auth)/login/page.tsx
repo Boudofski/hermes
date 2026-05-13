@@ -4,14 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Bot, ArrowRight, CheckCircle } from "lucide-react";
-
-const SELLING_POINTS = [
-  "8 specialist AI worker templates",
-  "Live execution streaming",
-  "Persistent memory across tasks",
-  "No setup, runs in the cloud",
-];
+import { ArrowRight, Bot, Brain, CheckCircle2, Radio, Terminal, Zap } from "lucide-react";
+import { OrbitalBackground } from "@/components/ui/orbital-background";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -46,142 +40,132 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex" style={{ background: "#07090f" }}>
-      {/* ── Left panel ── */}
-      <div
-        className="hidden lg:flex w-[480px] shrink-0 flex-col justify-between p-12 relative overflow-hidden"
-        style={{ background: "linear-gradient(150deg, #0a0f1e 0%, #07090f 100%)", borderRight: "1px solid #1e2640" }}
-      >
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: "radial-gradient(ellipse 60% 50% at 20% 40%, rgba(37,99,235,0.12) 0%, transparent 70%)" }}
-        />
+    <main className="rzg-root relative grid min-h-screen lg:grid-cols-[1.05fr_0.95fr]">
+      <OrbitalBackground dense />
+      <AuthShowcase eyebrow="Secure command access" title="Return to your AI workforce." />
 
-        {/* Logo */}
-        <Link href="/" className="relative flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-            <Bot className="w-4.5 h-4.5 text-white" />
-          </div>
-          <span className="font-bold text-white text-lg">RZG AI</span>
-        </Link>
-
-        {/* Copy */}
-        <div className="relative space-y-8">
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-3">Your AI workforce awaits.</h2>
-            <p className="text-base leading-relaxed" style={{ color: "#6b7a95" }}>
-              Deploy autonomous specialists for research, content, and business automation — in minutes.
-            </p>
-          </div>
-          <div className="space-y-3">
-            {SELLING_POINTS.map((p) => (
-              <div key={p} className="flex items-center gap-2.5 text-sm" style={{ color: "#8b95a7" }}>
-                <CheckCircle className="w-4 h-4 text-blue-500 shrink-0" />
-                {p}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <p className="relative text-xs" style={{ color: "#2d3a52" }}>© 2026 RZG AI</p>
-      </div>
-
-      {/* ── Right panel / form ── */}
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-[360px]">
-          {/* Mobile logo */}
-          <Link href="/" className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-7 h-7 rounded-md bg-blue-600 flex items-center justify-center">
-              <Bot className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-bold text-white">RZG AI</span>
+      <section className="relative flex items-center justify-center px-5 py-10 sm:px-8">
+        <div className="w-full max-w-md">
+          <Link href="/" className="mb-10 flex items-center gap-3 lg:hidden">
+            <div className="brand-mark h-9 w-9"><Bot className="h-5 w-5" /></div>
+            <span className="text-sm font-black text-white">RZG AI</span>
           </Link>
 
-          <h1 className="text-2xl font-bold text-white mb-1">Welcome back</h1>
-          <p className="text-sm mb-8" style={{ color: "#6b7a95" }}>Sign in to your workspace</p>
+          <div className="surface-panel p-6 sm:p-8">
+            <p className="eyebrow mb-3">Command Center</p>
+            <h1 className="text-3xl font-black tracking-tight text-white">Welcome back</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-300">Sign in to manage workers, tasks, live runs, and memory.</p>
 
-          {/* Google */}
-          <button
-            type="button"
-            onClick={handleGoogle}
-            className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-lg text-sm font-medium text-white transition-all mb-4"
-            style={{ background: "#0d1120", border: "1px solid #1e2640" }}
-          >
-            <GoogleIcon />
-            Continue with Google
-          </button>
-
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex-1 h-px" style={{ background: "#1e2640" }} />
-            <span className="text-xs" style={{ color: "#3a4455" }}>or</span>
-            <div className="flex-1 h-px" style={{ background: "#1e2640" }} />
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "#6b7a95" }}>Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-                placeholder="you@company.com"
-                className="w-full px-3.5 py-2.5 rounded-lg text-sm text-white outline-none transition-all"
-                style={{
-                  background: "#0d1120",
-                  border: "1px solid #1e2640",
-                  caretColor: "#3b82f6",
-                }}
-                onFocus={e => (e.target.style.borderColor = "#2563eb")}
-                onBlur={e => (e.target.style.borderColor = "#1e2640")}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "#6b7a95" }}>Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-                placeholder="••••••••"
-                className="w-full px-3.5 py-2.5 rounded-lg text-sm text-white outline-none transition-all"
-                style={{
-                  background: "#0d1120",
-                  border: "1px solid #1e2640",
-                  caretColor: "#3b82f6",
-                }}
-                onFocus={e => (e.target.style.borderColor = "#2563eb")}
-                onBlur={e => (e.target.style.borderColor = "#1e2640")}
-              />
-            </div>
-
-            {error && (
-              <div className="px-3.5 py-2.5 rounded-lg text-xs" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#f87171" }}>
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white transition-all mt-1 disabled:opacity-50"
-              style={{ background: "#1d4ed8" }}
-            >
-              {loading ? "Signing in…" : <><span>Sign In</span><ArrowRight className="w-3.5 h-3.5" /></>}
+            <button type="button" onClick={handleGoogle} className="button-secondary mt-7 w-full">
+              <GoogleIcon />
+              Continue with Google
             </button>
-          </form>
 
-          <p className="text-sm mt-6 text-center" style={{ color: "#6b7a95" }}>
-            No account?{" "}
-            <Link href="/register" className="text-blue-400 hover:text-blue-300 transition-colors font-medium">
-              Create one free
-            </Link>
-          </p>
+            <div className="my-5 flex items-center gap-3">
+              <div className="h-px flex-1 bg-white/10" />
+              <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">or</span>
+              <div className="h-px flex-1 bg-white/10" />
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <label className="label-premium">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  placeholder="you@company.com"
+                  className="input-premium"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="label-premium">Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                  placeholder="Enter your password"
+                  className="input-premium"
+                />
+              </div>
+
+              {error && (
+                <div className="rounded-xl border border-red-300/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-100">
+                  {error}
+                </div>
+              )}
+
+              <button type="submit" disabled={loading} className="button-primary w-full">
+                {loading ? "Signing in..." : <>Sign In <ArrowRight className="h-4 w-4" /></>}
+              </button>
+            </form>
+
+            <p className="mt-6 text-center text-sm text-slate-300">
+              No account?{" "}
+              <Link href="/register" className="font-bold text-cyan-100 hover:text-white">
+                Create one free
+              </Link>
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function AuthShowcase({ eyebrow, title }: { eyebrow: string; title: string }) {
+  return (
+    <section className="relative hidden min-h-screen border-r border-white/10 px-10 py-10 lg:flex lg:flex-col lg:justify-between">
+      <Link href="/" className="flex items-center gap-3">
+        <div className="brand-mark h-10 w-10"><Bot className="h-5 w-5" /></div>
+        <div>
+          <p className="text-sm font-black text-white">RZG AI</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-200">Workforce Command</p>
+        </div>
+      </Link>
+
+      <div className="max-w-xl">
+        <p className="eyebrow">{eyebrow}</p>
+        <h2 className="mt-4 text-5xl font-black leading-tight tracking-tight text-white">{title}</h2>
+        <p className="mt-5 text-lg leading-8 text-slate-300">
+          Inspect live execution, assign missions, and preserve operational memory across every AI worker.
+        </p>
+        <div className="mt-8 grid gap-3">
+          {[
+            [Radio, "Live execution stream"],
+            [Brain, "Persistent memory vault"],
+            [Zap, "Worker task orchestration"],
+          ].map(([Icon, text]) => (
+            <div key={text as string} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.045] p-4 text-sm font-bold text-slate-100">
+              <Icon className="h-5 w-5 text-cyan-200" />
+              {text as string}
+            </div>
+          ))}
         </div>
       </div>
-    </div>
+
+      <div className="console-shell">
+        <div className="console-header">
+          <div className="flex items-center gap-2">
+            <Terminal className="h-4 w-4 text-cyan-200" />
+            <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-200">Preview</span>
+          </div>
+          <span className="badge badge-blue">Online</span>
+        </div>
+        <div className="console-body p-4">
+          {["Research Lead connected", "Memory layer mounted", "Task queue ready", "Awaiting operator"].map((line) => (
+            <div key={line} className="exec-line">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-200" />
+              <span>{line}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
