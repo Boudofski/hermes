@@ -33,6 +33,8 @@ type HistoryRun = {
   errorMessage: string | null;
 };
 
+type ConsoleLog = { type: string; content: string; toolName?: string | null };
+
 interface Props {
   task: { id: string; name: string; status: string };
   agent: { id: string; name: string } | null;
@@ -41,10 +43,27 @@ interface Props {
   runHistory?: HistoryRun[];
 }
 
+function appendLog(prev: ConsoleLog[], next: ConsoleLog): ConsoleLog[] {
+  if (next.type === "text_delta") {
+    const last = prev[prev.length - 1];
+    if (last?.type === "text_delta") {
+      return [
+        ...prev.slice(0, -1),
+        { ...last, content: `${last.content}${next.content}` },
+      ];
+    }
+  }
+  return [...prev, next];
+}
+
+function normalizeLogs(logs: ConsoleLog[]): ConsoleLog[] {
+  return logs.reduce<ConsoleLog[]>((acc, log) => appendLog(acc, log), []);
+}
+
 export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = [] }: Props) {
   const [running, setRunning] = useState(false);
-  const [logs, setLogs] = useState<Array<{ type: string; content: string; toolName?: string | null }>>(
-    initialLogs.map((l) => ({ type: l.eventType, content: l.content, toolName: l.toolName }))
+  const [logs, setLogs] = useState<ConsoleLog[]>(
+    normalizeLogs(initialLogs.map((l) => ({ type: l.eventType, content: l.content, toolName: l.toolName })))
   );
   const [finalResponse, setFinalResponse] = useState<string | null>(initialRun?.finalResponse ?? null);
   const [error, setError] = useState<string | null>(initialRun?.errorMessage ?? null);
@@ -111,7 +130,7 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
               setError(event.content);
               setRunStatus("failed");
             } else {
-              setLogs((prev) => [...prev, { type: event.type, content: event.content, toolName: event.tool_name }]);
+              setLogs((prev) => appendLog(prev, { type: event.type, content: event.content, toolName: event.tool_name }));
             }
           } catch {
             // ignore parse errors
@@ -377,7 +396,7 @@ function HistoryDot({ status }: { status: string }) {
   return <div className={`w-2 h-2 rounded-full shrink-0 ${colors[status] ?? colors.pending}`} />;
 }
 
-function LogLine({ log }: { log: { type: string; content: string; toolName?: string | null } }) {
+function LogLine({ log }: { log: ConsoleLog }) {
   if (log.type === "tool_start") {
     return (
       <div className="exec-line log-tool">
@@ -396,7 +415,7 @@ function LogLine({ log }: { log: { type: string; content: string; toolName?: str
     );
   }
   if (log.type === "text_delta") {
-    return <div className="break-words leading-relaxed log-out">{log.content}</div>;
+    return <div className="whitespace-pre-wrap break-words font-sans text-sm leading-7 log-out">{log.content}</div>;
   }
   return (
     <div className="exec-line log-sys">
