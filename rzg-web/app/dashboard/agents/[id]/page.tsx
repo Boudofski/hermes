@@ -29,21 +29,23 @@ export default async function EditAgentPage({ params }: Params) {
   if (!agent) notFound();
 
   return (
-    <div className="p-6 max-w-2xl space-y-8">
+    <div className="p-8 max-w-2xl space-y-8">
       <div className="flex items-center gap-3">
         <Link
           href="/dashboard/agents"
-          className="w-8 h-8 rounded-lg border border-white/10 hover:border-white/20 hover:bg-white/5 flex items-center justify-center transition-all text-muted-foreground hover:text-foreground"
+          className="w-8 h-8 rounded-lg flex items-center justify-center transition-all shrink-0"
+          style={{ border: "1px solid #1e2640", color: "#4a5568" }}
         >
           <ArrowLeft className="w-4 h-4" />
         </Link>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-blue-600/15 flex items-center justify-center">
-            <Bot className="w-4 h-4 text-blue-400" />
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+            style={{ background: "rgba(37,99,235,0.12)", border: "1px solid rgba(37,99,235,0.25)" }}>
+            <Bot className="w-4.5 h-4.5" style={{ color: "#3b82f6" }} />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Edit</p>
-            <h1 className="text-xl font-bold leading-tight">{agent.name}</h1>
+            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#2d4a8a" }}>Edit</p>
+            <h1 className="text-xl font-bold text-white leading-tight">{agent.name}</h1>
           </div>
         </div>
       </div>

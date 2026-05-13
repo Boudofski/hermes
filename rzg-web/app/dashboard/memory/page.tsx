@@ -35,16 +35,21 @@ export default async function MemoryPage() {
   ]);
 
   return (
-    <div className="p-6 space-y-8 max-w-4xl">
+    <div className="p-8 max-w-4xl space-y-8">
       <div>
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-8 h-8 rounded-xl bg-cyan-500/10 flex items-center justify-center">
-            <Brain className="w-4 h-4 text-cyan-400" />
+        <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "#0e4a52" }}>
+          Knowledge Base
+        </p>
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+            style={{ background: "rgba(6,182,212,0.1)", border: "1px solid rgba(6,182,212,0.2)" }}>
+            <Brain className="w-4.5 h-4.5" style={{ color: "#06b6d4" }} />
           </div>
-          <p className="text-xs font-medium text-cyan-400 uppercase tracking-widest">Knowledge Base</p>
+          <div>
+            <h1 className="text-2xl font-bold text-white">Memory</h1>
+            <p className="text-sm" style={{ color: "#4a5568" }}>Persistent knowledge for your AI workers</p>
+          </div>
         </div>
-        <h1 className="text-2xl font-bold">Memory</h1>
-        <p className="text-muted-foreground text-sm mt-1">Persistent knowledge for your AI workers</p>
       </div>
 
       <MemoryManager

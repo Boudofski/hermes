@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import {
   Play, Square, RefreshCw, CheckCircle2, AlertCircle,
-  Clock, ChevronDown, ChevronUp, RotateCcw, Terminal,
+  Clock, ChevronDown, ChevronUp, RotateCcw,
 } from "lucide-react";
 
 type LogEvent = {
@@ -139,7 +139,7 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
 
   return (
     <div className="space-y-4">
-      {/* Controls */}
+      {/* Controls row */}
       <div className="flex items-center gap-3 flex-wrap">
         {!running ? (
           <>
@@ -147,7 +147,8 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
               <button
                 onClick={handleRun}
                 disabled={!agent}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-all"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50"
+                style={{ background: "#1d4ed8" }}
               >
                 <RotateCcw className="w-4 h-4" />
                 Retry
@@ -156,7 +157,8 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
               <button
                 onClick={handleRun}
                 disabled={!agent}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-all glow-blue"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50"
+                style={{ background: "#1d4ed8" }}
               >
                 <Play className="w-4 h-4" />
                 Run Now
@@ -166,7 +168,8 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
             {hasResult && !(isFailed || isCancelled) && (
               <button
                 onClick={handleRun}
-                className="flex items-center gap-2 px-3 py-2 border border-white/10 hover:border-white/20 hover:bg-white/5 text-sm rounded-xl transition-all"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all"
+                style={{ border: "1px solid #1e2640", color: "#6b7a95" }}
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 Re-run
@@ -176,37 +179,55 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
         ) : (
           <button
             onClick={handleStop}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600/80 hover:bg-red-600 text-white text-sm font-medium rounded-xl transition-all"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all"
+            style={{ background: "rgba(220,38,38,0.8)" }}
           >
             <Square className="w-4 h-4" />
             Stop
           </button>
         )}
 
-        <StatusPill status={runStatus} />
+        <StatusPill status={runStatus} running={running} />
 
         {!agent && (
-          <span className="text-xs text-muted-foreground">No AI worker assigned</span>
+          <span className="text-xs" style={{ color: "#4a5568" }}>No AI worker assigned</span>
         )}
       </div>
 
-      {/* Log viewer */}
-      {logs.length > 0 && (
-        <div className="rounded-2xl overflow-hidden border border-white/6 bg-[hsl(222,60%,3%)]">
-          <div className="px-4 py-2.5 border-b border-white/5 flex items-center gap-2">
-            <Terminal className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="text-xs font-mono text-muted-foreground">Agent Activity</span>
+      {/* Terminal window */}
+      {(logs.length > 0 || running) && (
+        <div className="rounded-xl overflow-hidden" style={{ background: "#06080e", border: "1px solid #1a2035" }}>
+          {/* macOS chrome */}
+          <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid #0f1520", background: "#080b12" }}>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full" style={{ background: "#ff5f57" }} />
+              <div className="w-3 h-3 rounded-full" style={{ background: "#febc2e" }} />
+              <div className="w-3 h-3 rounded-full" style={{ background: "#28c840" }} />
+            </div>
+            <div className="flex-1 flex justify-center">
+              <div className="flex items-center gap-2 px-3 py-0.5 rounded" style={{ background: "#0d1120", border: "1px solid #1a2035" }}>
+                <span className="text-xs font-mono" style={{ color: "#3a4455" }}>agent-execution</span>
+              </div>
+            </div>
             {running && (
-              <span className="ml-auto flex items-center gap-1.5 text-xs text-blue-400">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse-glow" />
-                Live
-              </span>
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse-dot" />
+                <span className="text-xs font-mono" style={{ color: "#3b82f6" }}>Live</span>
+              </div>
             )}
           </div>
-          <div className="p-4 max-h-80 overflow-y-auto font-mono text-xs space-y-1.5">
+
+          {/* Log lines */}
+          <div className="p-4 max-h-80 overflow-y-auto space-y-1 terminal-row">
             {logs.map((log, i) => (
               <LogLine key={i} log={log} />
             ))}
+            {running && logs.length === 0 && (
+              <div className="flex items-center gap-2" style={{ color: "#3a4455" }}>
+                <span className="text-xs">Initializing agent</span>
+                <span className="cursor-blink text-blue-400">▋</span>
+              </div>
+            )}
             <div ref={logsEndRef} />
           </div>
         </div>
@@ -214,13 +235,13 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
 
       {/* Error */}
       {error && (
-        <div className="flex items-start gap-3 p-4 bg-red-500/8 border border-red-500/20 rounded-2xl">
-          <div className="w-7 h-7 rounded-lg bg-red-500/15 flex items-center justify-center shrink-0 mt-0.5">
-            <AlertCircle className="w-3.5 h-3.5 text-red-400" />
+        <div className="flex items-start gap-3 p-4 rounded-xl" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)" }}>
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5" style={{ background: "rgba(239,68,68,0.12)" }}>
+            <AlertCircle className="w-3.5 h-3.5" style={{ color: "#f87171" }} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-red-400">Run failed</p>
-            <p className="text-xs text-muted-foreground mt-0.5 break-words">{error}</p>
+            <p className="text-sm font-medium" style={{ color: "#f87171" }}>Run failed</p>
+            <p className="text-xs mt-0.5 break-words" style={{ color: "#4a5568" }}>{error}</p>
           </div>
         </div>
       )}
@@ -229,25 +250,25 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
       {finalResponse && (
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-green-500/10 flex items-center justify-center">
-              <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
+            <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: "rgba(34,197,94,0.1)" }}>
+              <CheckCircle2 className="w-3.5 h-3.5" style={{ color: "#22c55e" }} />
             </div>
-            <span className="text-sm font-semibold">Output</span>
+            <span className="text-sm font-semibold text-white">Output</span>
           </div>
-          <div className="glass rounded-2xl p-5">
-            <pre className="text-sm whitespace-pre-wrap font-sans leading-relaxed">{finalResponse}</pre>
+          <div className="rounded-xl p-5" style={{ background: "#0b0e18", border: "1px solid #1e2640" }}>
+            <pre className="text-sm whitespace-pre-wrap font-sans leading-relaxed text-white">{finalResponse}</pre>
           </div>
         </div>
       )}
 
       {/* Empty state */}
       {!running && logs.length === 0 && !finalResponse && !error && (
-        <div className="glass rounded-2xl p-10 text-center">
-          <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mx-auto mb-3">
-            <Play className="w-5 h-5 text-muted-foreground" />
+        <div className="rounded-xl p-10 text-center" style={{ background: "#0b0e18", border: "1px solid #1e2640" }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: "#0d1120", border: "1px solid #1e2640" }}>
+            <Play className="w-5 h-5" style={{ color: "#3a4455" }} />
           </div>
-          <p className="text-sm text-muted-foreground">
-            No runs yet. Click <strong className="text-foreground">Run Now</strong> to execute this task.
+          <p className="text-sm" style={{ color: "#4a5568" }}>
+            No runs yet. Click <strong className="text-white">Run Now</strong> to execute this task.
           </p>
         </div>
       )}
@@ -265,24 +286,25 @@ function RunHistory({ runs }: { runs: HistoryRun[] }) {
   const [expandedRun, setExpandedRun] = useState<string | null>(null);
 
   return (
-    <div className="glass rounded-2xl overflow-hidden">
+    <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #1e2640" }}>
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/4 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 transition-all"
+        style={{ background: "#0b0e18" }}
       >
-        <span className="text-xs font-medium text-muted-foreground">
+        <span className="text-xs font-medium" style={{ color: "#4a5568" }}>
           Run History ({runs.length} previous run{runs.length !== 1 ? "s" : ""})
         </span>
         {expanded
-          ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
-          : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
+          ? <ChevronUp className="w-3.5 h-3.5" style={{ color: "#3a4455" }} />
+          : <ChevronDown className="w-3.5 h-3.5" style={{ color: "#3a4455" }} />}
       </button>
 
       {expanded && (
-        <div className="border-t border-white/5 divide-y divide-white/5">
+        <div style={{ borderTop: "1px solid #131928" }}>
           {runs.map((run, i) => (
-            <div key={run.id} className="p-3 space-y-2">
+            <div key={run.id} className="p-3 space-y-2" style={{ borderBottom: i < runs.length - 1 ? "1px solid #131928" : "none", background: "#0d1120" }}>
               <button
                 type="button"
                 onClick={() => setExpandedRun(expandedRun === run.id ? null : run.id)}
@@ -290,32 +312,32 @@ function RunHistory({ runs }: { runs: HistoryRun[] }) {
               >
                 <StatusDot status={run.status} />
                 <div className="flex-1 min-w-0">
-                  <span className="text-xs font-medium">Run #{runs.length - i}</span>
-                  <span className="text-xs text-muted-foreground ml-2">
+                  <span className="text-xs font-medium text-white">Run #{runs.length - i}</span>
+                  <span className="text-xs ml-2" style={{ color: "#2d3a52" }}>
                     {run.createdAt ? new Date(run.createdAt).toLocaleString() : "—"}
                   </span>
                 </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusChip(run.status)}`}>
+                <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={statusChipStyle(run.status)}>
                   {run.status}
                 </span>
                 {(run.finalResponse || run.errorMessage) && (
                   expandedRun === run.id
-                    ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                    : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    ? <ChevronUp className="w-3.5 h-3.5 shrink-0" style={{ color: "#3a4455" }} />
+                    : <ChevronDown className="w-3.5 h-3.5 shrink-0" style={{ color: "#3a4455" }} />
                 )}
               </button>
 
               {expandedRun === run.id && run.finalResponse && (
-                <div className="ml-5 bg-white/3 rounded-xl p-3 border border-white/5">
-                  <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed text-muted-foreground line-clamp-10">
+                <div className="ml-5 rounded-xl p-3" style={{ background: "#0b0e18", border: "1px solid #1e2640" }}>
+                  <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed line-clamp-10" style={{ color: "#6b7a95" }}>
                     {run.finalResponse}
                   </pre>
                 </div>
               )}
 
               {expandedRun === run.id && run.errorMessage && (
-                <div className="ml-5 bg-red-500/8 rounded-xl p-3 border border-red-500/15">
-                  <p className="text-xs text-red-400">{run.errorMessage}</p>
+                <div className="ml-5 rounded-xl p-3" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)" }}>
+                  <p className="text-xs" style={{ color: "#f87171" }}>{run.errorMessage}</p>
                 </div>
               )}
             </div>
@@ -326,69 +348,76 @@ function RunHistory({ runs }: { runs: HistoryRun[] }) {
   );
 }
 
-function statusChip(status: string) {
-  const map: Record<string, string> = {
-    completed: "bg-green-400/10 text-green-400",
-    failed: "bg-red-400/10 text-red-400",
-    cancelled: "bg-white/8 text-muted-foreground",
-    running: "bg-yellow-400/10 text-yellow-400",
-    pending: "bg-white/8 text-muted-foreground",
+function statusChipStyle(status: string): React.CSSProperties {
+  const map: Record<string, React.CSSProperties> = {
+    completed: { background: "rgba(34,197,94,0.1)", color: "#22c55e" },
+    failed:    { background: "rgba(239,68,68,0.1)", color: "#ef4444" },
+    cancelled: { background: "rgba(74,85,104,0.1)", color: "#4a5568" },
+    running:   { background: "rgba(245,158,11,0.1)", color: "#f59e0b" },
+    pending:   { background: "rgba(74,85,104,0.1)", color: "#4a5568" },
   };
   return map[status] ?? map.pending;
 }
 
 function StatusDot({ status }: { status: string }) {
-  const color: Record<string, string> = {
-    completed: "bg-green-400",
-    failed: "bg-red-400",
-    cancelled: "bg-muted-foreground",
-    running: "bg-yellow-400",
-    pending: "bg-muted-foreground",
+  const colors: Record<string, string> = {
+    completed: "#22c55e",
+    failed: "#ef4444",
+    cancelled: "#4a5568",
+    running: "#f59e0b",
+    pending: "#4a5568",
   };
-  return <div className={`w-2 h-2 rounded-full shrink-0 ${color[status] ?? color.pending}`} />;
+  return <div className="w-2 h-2 rounded-full shrink-0" style={{ background: colors[status] ?? colors.pending }} />;
 }
 
 function LogLine({ log }: { log: { type: string; content: string; toolName?: string | null } }) {
   if (log.type === "tool_start") {
     return (
-      <div className="text-violet-400 flex items-baseline gap-1.5">
-        <span className="text-muted-foreground/60 shrink-0">▶</span>
+      <div className="flex items-baseline gap-1.5" style={{ color: "#a78bfa" }}>
+        <span style={{ color: "rgba(74,85,104,0.6)" }} className="shrink-0">▶</span>
         <span>{log.toolName ?? log.content}</span>
-        <span className="text-muted-foreground/60 text-xs">starting…</span>
+        <span style={{ color: "rgba(74,85,104,0.6)" }} className="text-xs">starting…</span>
       </div>
     );
   }
   if (log.type === "tool_end") {
     return (
-      <div className="text-green-400/70 flex items-baseline gap-1.5">
-        <span className="text-muted-foreground/60 shrink-0">✓</span>
+      <div className="flex items-baseline gap-1.5" style={{ color: "rgba(34,197,94,0.7)" }}>
+        <span style={{ color: "rgba(74,85,104,0.6)" }} className="shrink-0">✓</span>
         <span>{log.toolName ?? log.content}</span>
       </div>
     );
   }
   if (log.type === "text_delta") {
-    return <div className="text-foreground/90 leading-relaxed">{log.content}</div>;
+    return <div className="leading-relaxed" style={{ color: "rgba(255,255,255,0.85)" }}>{log.content}</div>;
   }
   return (
-    <div className="text-muted-foreground flex items-baseline gap-1.5">
-      <span className="text-blue-400/50 shrink-0">•</span>
+    <div className="flex items-baseline gap-1.5" style={{ color: "#4a5568" }}>
+      <span style={{ color: "rgba(59,130,246,0.5)" }} className="shrink-0">•</span>
       <span>{log.content}</span>
     </div>
   );
 }
 
-function StatusPill({ status }: { status: string }) {
-  const cfg: Record<string, { label: string; cls: string; icon: React.ReactNode }> = {
-    idle: { label: "Idle", cls: "text-muted-foreground bg-white/6", icon: <Clock className="w-3 h-3" /> },
-    running: { label: "Running", cls: "text-yellow-400 bg-yellow-400/10", icon: <Clock className="w-3 h-3 animate-spin" /> },
-    completed: { label: "Completed", cls: "text-green-400 bg-green-400/10", icon: <CheckCircle2 className="w-3 h-3" /> },
-    failed: { label: "Failed", cls: "text-red-400 bg-red-400/10", icon: <AlertCircle className="w-3 h-3" /> },
-    cancelled: { label: "Cancelled", cls: "text-muted-foreground bg-white/6", icon: <Square className="w-3 h-3" /> },
+function StatusPill({ status, running }: { status: string; running: boolean }) {
+  const cfg: Record<string, { label: string; color: string; bg: string }> = {
+    idle:      { label: "Idle",      color: "#4a5568", bg: "rgba(74,85,104,0.12)" },
+    running:   { label: "Running",   color: "#f59e0b", bg: "rgba(245,158,11,0.12)" },
+    completed: { label: "Completed", color: "#22c55e", bg: "rgba(34,197,94,0.12)" },
+    failed:    { label: "Failed",    color: "#ef4444", bg: "rgba(239,68,68,0.12)" },
+    cancelled: { label: "Cancelled", color: "#4a5568", bg: "rgba(74,85,104,0.12)" },
   };
-  const { label, cls, icon } = cfg[status] ?? cfg.idle;
+  const { label, color, bg } = cfg[status] ?? cfg.idle;
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cls}`}>
-      {icon}
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium" style={{ color, background: bg }}>
+      {running
+        ? <Clock className="w-3 h-3 animate-spin" />
+        : status === "completed"
+        ? <CheckCircle2 className="w-3 h-3" />
+        : status === "failed"
+        ? <AlertCircle className="w-3 h-3" />
+        : <Clock className="w-3 h-3" />
+      }
       {label}
     </span>
   );

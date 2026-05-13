@@ -47,32 +47,35 @@ export function NewTaskButton({ agents, defaultAgentId }: { agents: Agent[]; def
 
   if (agents.length === 0) return null;
 
-  const INPUT_CLS =
-    "w-full px-3.5 py-2.5 bg-white/4 border border-white/8 hover:border-white/15 focus:border-blue-500 rounded-xl text-sm outline-none transition-colors placeholder:text-muted-foreground/50 font-sans";
+  const INPUT_CLS = "w-full px-3.5 py-2.5 rounded-lg text-sm text-white outline-none transition-all font-sans";
+  const INPUT_STYLE = { background: "#0b0e18", border: "1px solid #1e2640", caretColor: "#3b82f6" };
 
   return (
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-xl transition-all"
+        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all"
+        style={{ background: "#1d4ed8" }}
       >
         <Plus className="w-4 h-4" />
         New Task
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="glass rounded-2xl w-full max-w-md shadow-2xl border-white/12">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/6">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-blue-500/15 flex items-center justify-center">
-                  <Zap className="w-3.5 h-3.5 text-blue-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
+          <div className="w-full max-w-md rounded-xl overflow-hidden shadow-2xl" style={{ background: "#0b0e18", border: "1px solid #1e2640" }}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid #1e2640" }}>
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(37,99,235,0.15)", border: "1px solid rgba(37,99,235,0.25)" }}>
+                  <Zap className="w-3.5 h-3.5" style={{ color: "#3b82f6" }} />
                 </div>
-                <h2 className="font-semibold text-sm">New Task</h2>
+                <h2 className="font-semibold text-sm text-white">New Task</h2>
               </div>
               <button
                 onClick={() => setOpen(false)}
-                className="w-7 h-7 rounded-lg hover:bg-white/8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+                style={{ color: "#4a5568" }}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -80,11 +83,12 @@ export function NewTaskButton({ agents, defaultAgentId }: { agents: Agent[]; def
 
             <form onSubmit={handleCreate} className="p-5 space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">AI Worker</label>
+                <label className="block text-xs font-medium" style={{ color: "#6b7a95" }}>AI Worker</label>
                 <select
                   value={form.agentId}
                   onChange={(e) => set("agentId", e.target.value)}
                   className={INPUT_CLS}
+                  style={INPUT_STYLE}
                 >
                   {agents.map((a) => (
                     <option key={a.id} value={a.id}>
@@ -95,7 +99,7 @@ export function NewTaskButton({ agents, defaultAgentId }: { agents: Agent[]; def
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Task Name</label>
+                <label className="block text-xs font-medium" style={{ color: "#6b7a95" }}>Task Name</label>
                 <input
                   type="text"
                   value={form.name}
@@ -103,11 +107,14 @@ export function NewTaskButton({ agents, defaultAgentId }: { agents: Agent[]; def
                   required
                   placeholder="Q2 competitor analysis"
                   className={INPUT_CLS}
+                  style={INPUT_STYLE}
+                  onFocus={e => (e.target.style.borderColor = "#2563eb")}
+                  onBlur={e => (e.target.style.borderColor = "#1e2640")}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Prompt</label>
+                <label className="block text-xs font-medium" style={{ color: "#6b7a95" }}>Prompt</label>
                 <textarea
                   value={form.prompt}
                   onChange={(e) => set("prompt", e.target.value)}
@@ -115,27 +122,32 @@ export function NewTaskButton({ agents, defaultAgentId }: { agents: Agent[]; def
                   rows={4}
                   placeholder="Research the top 5 competitors in the B2B SaaS project management space and compare their pricing, features, and positioning…"
                   className={`${INPUT_CLS} resize-none`}
+                  style={INPUT_STYLE}
+                  onFocus={e => (e.target.style.borderColor = "#2563eb")}
+                  onBlur={e => (e.target.style.borderColor = "#1e2640")}
                 />
               </div>
 
               {error && (
-                <div className="px-3 py-2.5 bg-red-500/10 border border-red-500/20 rounded-xl">
-                  <p className="text-xs text-red-400">{error}</p>
+                <div className="px-3.5 py-2.5 rounded-lg text-xs" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#f87171" }}>
+                  {error}
                 </div>
               )}
 
-              <div className="flex gap-3">
+              <div className="flex gap-3 pt-1">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium rounded-xl transition-all text-sm"
+                  className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50"
+                  style={{ background: "#1d4ed8" }}
                 >
                   {loading ? "Creating…" : "Create Task"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="px-4 py-2.5 border border-white/10 hover:border-white/20 rounded-xl text-sm hover:bg-white/5 transition-all"
+                  className="px-4 py-2.5 rounded-lg text-sm transition-all"
+                  style={{ border: "1px solid #1e2640", color: "#6b7a95" }}
                 >
                   Cancel
                 </button>

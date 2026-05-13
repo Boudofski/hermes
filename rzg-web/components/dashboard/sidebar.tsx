@@ -4,9 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import {
-  LayoutDashboard, Bot, ListTodo, Brain, LogOut,
-} from "lucide-react";
+import { LayoutDashboard, Bot, ListTodo, Brain, LogOut } from "lucide-react";
 
 const NAV = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
@@ -31,48 +29,61 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-56 shrink-0 flex flex-col border-r border-white/6 bg-background h-screen sticky top-0">
+    <aside
+      className="w-52 shrink-0 flex flex-col h-screen sticky top-0"
+      style={{ background: "#07090f", borderRight: "1px solid #1a2035" }}
+    >
       {/* Logo */}
-      <div className="px-4 h-14 flex items-center border-b border-white/6">
-        <Link href="/dashboard" className="flex items-center gap-2.5">
+      <div className="px-4 h-13 flex items-center" style={{ borderBottom: "1px solid #1a2035" }}>
+        <Link href="/dashboard" className="flex items-center gap-2.5 py-3.5">
           <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
-            <Bot className="w-4 h-4 text-white" />
+            <Bot className="w-3.5 h-3.5 text-white" />
           </div>
-          <span className="font-bold text-sm tracking-tight">
-            RZG <span className="text-blue-400">AI</span>
-          </span>
+          <span className="font-bold text-sm text-white tracking-tight">RZG AI</span>
         </Link>
       </div>
 
+      {/* Nav section label */}
+      <div className="px-4 pt-5 pb-1.5">
+        <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#2d3a52" }}>
+          Workspace
+        </span>
+      </div>
+
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-3 pb-4 space-y-0.5 overflow-y-auto">
         {NAV.map(({ href, label, icon: Icon, exact }) => {
           const active = isActive(href, exact);
           return (
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
-                active
-                  ? "bg-blue-600/15 text-blue-400 font-medium"
-                  : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-              }`}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all"
+              style={active
+                ? { background: "rgba(37,99,235,0.12)", color: "#60a5fa" }
+                : { color: "#4a5568" }
+              }
+              onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLElement).style.color = "#8b95a7"; (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; } }}
+              onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLElement).style.color = "#4a5568"; (e.currentTarget as HTMLElement).style.background = ""; } }}
             >
-              <Icon className={`w-4 h-4 shrink-0 ${active ? "text-blue-400" : ""}`} />
-              {label}
+              <Icon className="w-4 h-4 shrink-0" />
+              <span className={active ? "font-medium" : ""}>{label}</span>
               {active && (
-                <span className="ml-auto w-1 h-4 rounded-full bg-blue-400/60" />
+                <span className="ml-auto w-1 h-3.5 rounded-full" style={{ background: "#3b82f6", opacity: 0.7 }} />
               )}
             </Link>
           );
         })}
       </nav>
 
-      {/* Sign out */}
-      <div className="px-3 py-4 border-t border-white/6">
+      {/* Bottom section */}
+      <div className="px-3 py-4" style={{ borderTop: "1px solid #1a2035" }}>
         <button
           onClick={signOut}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all"
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all"
+          style={{ color: "#3a4455" }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#8b95a7"; (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "#3a4455"; (e.currentTarget as HTMLElement).style.background = ""; }}
         >
           <LogOut className="w-4 h-4 shrink-0" />
           Sign out

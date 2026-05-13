@@ -4,7 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Bot, ArrowRight } from "lucide-react";
+import { Bot, ArrowRight, CheckCircle } from "lucide-react";
+
+const SELLING_POINTS = [
+  "8 specialist AI worker templates",
+  "Live execution streaming",
+  "Persistent memory across tasks",
+  "No setup, runs in the cloud",
+];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -39,92 +46,140 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background bg-grid flex items-center justify-center px-4">
-      <div className="absolute inset-0 bg-gradient-to-b from-blue-600/5 via-transparent to-transparent pointer-events-none" />
+    <div className="min-h-screen flex" style={{ background: "#07090f" }}>
+      {/* ── Left panel ── */}
+      <div
+        className="hidden lg:flex w-[480px] shrink-0 flex-col justify-between p-12 relative overflow-hidden"
+        style={{ background: "linear-gradient(150deg, #0a0f1e 0%, #07090f 100%)", borderRight: "1px solid #1e2640" }}
+      >
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: "radial-gradient(ellipse 60% 50% at 20% 40%, rgba(37,99,235,0.12) 0%, transparent 70%)" }}
+        />
 
-      <div className="w-full max-w-sm relative">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center">
-              <Bot className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-bold text-xl">RZG <span className="text-blue-400">AI</span></span>
-          </Link>
-          <p className="text-muted-foreground text-sm">Sign in to your workspace</p>
+        <Link href="/" className="relative flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+            <Bot className="w-4.5 h-4.5 text-white" />
+          </div>
+          <span className="font-bold text-white text-lg">RZG AI</span>
+        </Link>
+
+        {/* Copy */}
+        <div className="relative space-y-8">
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-3">Your AI workforce awaits.</h2>
+            <p className="text-base leading-relaxed" style={{ color: "#6b7a95" }}>
+              Deploy autonomous specialists for research, content, and business automation — in minutes.
+            </p>
+          </div>
+          <div className="space-y-3">
+            {SELLING_POINTS.map((p) => (
+              <div key={p} className="flex items-center gap-2.5 text-sm" style={{ color: "#8b95a7" }}>
+                <CheckCircle className="w-4 h-4 text-blue-500 shrink-0" />
+                {p}
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Card */}
-        <div className="glass rounded-2xl p-6 space-y-4">
+        <p className="relative text-xs" style={{ color: "#2d3a52" }}>© 2026 RZG AI</p>
+      </div>
+
+      {/* ── Right panel / form ── */}
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="w-full max-w-[360px]">
+          {/* Mobile logo */}
+          <Link href="/" className="lg:hidden flex items-center gap-2 mb-8">
+            <div className="w-7 h-7 rounded-md bg-blue-600 flex items-center justify-center">
+              <Bot className="w-4 h-4 text-white" />
+            </div>
+            <span className="font-bold text-white">RZG AI</span>
+          </Link>
+
+          <h1 className="text-2xl font-bold text-white mb-1">Welcome back</h1>
+          <p className="text-sm mb-8" style={{ color: "#6b7a95" }}>Sign in to your workspace</p>
+
           {/* Google */}
           <button
             type="button"
             onClick={handleGoogle}
-            className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 border border-white/10 hover:border-white/20 hover:bg-white/5 rounded-xl transition-all text-sm font-medium"
+            className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-lg text-sm font-medium text-white transition-all mb-4"
+            style={{ background: "#0d1120", border: "1px solid #1e2640" }}
           >
             <GoogleIcon />
             Continue with Google
           </button>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/8" />
-            </div>
-            <div className="relative flex justify-center text-xs text-muted-foreground">
-              <span className="bg-background px-2">or continue with email</span>
-            </div>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-1 h-px" style={{ background: "#1e2640" }} />
+            <span className="text-xs" style={{ color: "#3a4455" }}>or</span>
+            <div className="flex-1 h-px" style={{ background: "#1e2640" }} />
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Email</label>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "#6b7a95" }}>Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="w-full px-3.5 py-2.5 bg-white/4 border border-white/8 hover:border-white/15 focus:border-blue-500 rounded-xl text-sm outline-none transition-colors placeholder:text-muted-foreground/50"
                 placeholder="you@company.com"
+                className="w-full px-3.5 py-2.5 rounded-lg text-sm text-white outline-none transition-all"
+                style={{
+                  background: "#0d1120",
+                  border: "1px solid #1e2640",
+                  caretColor: "#3b82f6",
+                }}
+                onFocus={e => (e.target.style.borderColor = "#2563eb")}
+                onBlur={e => (e.target.style.borderColor = "#1e2640")}
               />
             </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Password</label>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "#6b7a95" }}>Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                className="w-full px-3.5 py-2.5 bg-white/4 border border-white/8 hover:border-white/15 focus:border-blue-500 rounded-xl text-sm outline-none transition-colors placeholder:text-muted-foreground/50"
                 placeholder="••••••••"
+                className="w-full px-3.5 py-2.5 rounded-lg text-sm text-white outline-none transition-all"
+                style={{
+                  background: "#0d1120",
+                  border: "1px solid #1e2640",
+                  caretColor: "#3b82f6",
+                }}
+                onFocus={e => (e.target.style.borderColor = "#2563eb")}
+                onBlur={e => (e.target.style.borderColor = "#1e2640")}
               />
             </div>
 
             {error && (
-              <div className="px-3.5 py-2.5 bg-red-500/10 border border-red-500/20 rounded-xl">
-                <p className="text-xs text-red-400">{error}</p>
+              <div className="px-3.5 py-2.5 rounded-lg text-xs" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#f87171" }}>
+                {error}
               </div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium rounded-xl transition-colors text-sm mt-1"
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white transition-all mt-1 disabled:opacity-50"
+              style={{ background: "#1d4ed8" }}
             >
-              {loading ? "Signing in…" : (
-                <>Sign In <ArrowRight className="w-3.5 h-3.5" /></>
-              )}
+              {loading ? "Signing in…" : <><span>Sign In</span><ArrowRight className="w-3.5 h-3.5" /></>}
             </button>
           </form>
-        </div>
 
-        <p className="text-center text-sm text-muted-foreground mt-5">
-          No account?{" "}
-          <Link href="/register" className="text-blue-400 hover:text-blue-300 transition-colors font-medium">
-            Create one free
-          </Link>
-        </p>
+          <p className="text-sm mt-6 text-center" style={{ color: "#6b7a95" }}>
+            No account?{" "}
+            <Link href="/register" className="text-blue-400 hover:text-blue-300 transition-colors font-medium">
+              Create one free
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

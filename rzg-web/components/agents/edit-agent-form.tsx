@@ -26,9 +26,6 @@ interface Agent {
   maxIterations: number;
 }
 
-const INPUT_CLS =
-  "w-full px-3.5 py-2.5 bg-white/4 border border-white/8 hover:border-white/15 focus:border-blue-500 rounded-xl text-sm outline-none transition-colors font-sans placeholder:text-muted-foreground/50";
-
 export function EditAgentForm({ agent }: { agent: Agent }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -88,33 +85,47 @@ export function EditAgentForm({ agent }: { agent: Agent }) {
     }
   }
 
+  const SURFACE = { background: "#0b0e18", border: "1px solid #1e2640" };
+  const INPUT_CLS = "w-full px-3.5 py-2.5 rounded-lg text-sm text-white outline-none transition-all font-sans";
+  const INPUT_STYLE = { background: "#0d1120", border: "1px solid #1e2640", caretColor: "#3b82f6" };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Identity */}
-      <div className="glass rounded-2xl p-5 space-y-4">
-        <span className="text-sm font-semibold">Identity</span>
+      <div className="rounded-xl p-5 space-y-4" style={SURFACE}>
+        <span className="text-sm font-semibold text-white">Identity</span>
 
         <Field label="Worker Name" required>
-          <input type="text" value={form.name} onChange={(e) => set("name", e.target.value)} required placeholder="Research Agent" className={INPUT_CLS} />
+          <input type="text" value={form.name} onChange={(e) => set("name", e.target.value)} required placeholder="Research Agent"
+            className={INPUT_CLS} style={INPUT_STYLE}
+            onFocus={e => (e.target.style.borderColor = "#2563eb")}
+            onBlur={e => (e.target.style.borderColor = "#1e2640")} />
         </Field>
 
         <Field label="Role" required hint="What kind of specialist is this worker?">
-          <input type="text" value={form.role} onChange={(e) => set("role", e.target.value)} required placeholder="Senior Research Analyst" className={INPUT_CLS} />
+          <input type="text" value={form.role} onChange={(e) => set("role", e.target.value)} required placeholder="Senior Research Analyst"
+            className={INPUT_CLS} style={INPUT_STYLE}
+            onFocus={e => (e.target.style.borderColor = "#2563eb")}
+            onBlur={e => (e.target.style.borderColor = "#1e2640")} />
         </Field>
 
         <Field label="Goal" required hint="The primary objective this agent is designed to achieve">
-          <textarea value={form.goal} onChange={(e) => set("goal", e.target.value)} required rows={3} placeholder="Conduct thorough research…" className={`${INPUT_CLS} resize-none`} />
+          <textarea value={form.goal} onChange={(e) => set("goal", e.target.value)} required rows={3} placeholder="Conduct thorough research…"
+            className={`${INPUT_CLS} resize-none`} style={INPUT_STYLE}
+            onFocus={e => (e.target.style.borderColor = "#2563eb")}
+            onBlur={e => (e.target.style.borderColor = "#1e2640")} />
         </Field>
 
         <div>
           <button
             type="button"
             onClick={() => setShowInstructions((v) => !v)}
-            className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center gap-2 text-xs transition-colors"
+            style={{ color: "#4a5568" }}
           >
             {showInstructions ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
             {showInstructions ? "Hide" : "Show"} system instructions
-            {form.instructions && !showInstructions && <span className="text-blue-400 ml-1">✓ set</span>}
+            {form.instructions && !showInstructions && <span style={{ color: "#3b82f6" }} className="ml-1">✓ set</span>}
           </button>
           {showInstructions && (
             <textarea
@@ -123,17 +134,18 @@ export function EditAgentForm({ agent }: { agent: Agent }) {
               rows={10}
               placeholder="Detailed instructions, protocols, output formats, constraints…"
               className={`mt-2 ${INPUT_CLS} resize-y font-mono text-xs`}
+              style={INPUT_STYLE}
             />
           )}
         </div>
       </div>
 
       {/* Model & Settings */}
-      <div className="glass rounded-2xl p-5 space-y-4">
-        <span className="text-sm font-semibold">Model & Settings</span>
+      <div className="rounded-xl p-5 space-y-4" style={SURFACE}>
+        <span className="text-sm font-semibold text-white">Model & Settings</span>
 
         <Field label="Model">
-          <select value={form.model} onChange={(e) => set("model", e.target.value)} className={INPUT_CLS}>
+          <select value={form.model} onChange={(e) => set("model", e.target.value)} className={INPUT_CLS} style={INPUT_STYLE}>
             {MODELS.map((m) => (
               <option key={m.value} value={m.value}>{m.label}</option>
             ))}
@@ -141,7 +153,8 @@ export function EditAgentForm({ agent }: { agent: Agent }) {
         </Field>
 
         <Field label="Max Iterations" hint="Tool-calling steps allowed per run (1–90)">
-          <input type="number" value={form.maxIterations} onChange={(e) => set("maxIterations", parseInt(e.target.value, 10))} min={1} max={90} className={`${INPUT_CLS} w-28`} />
+          <input type="number" value={form.maxIterations} onChange={(e) => set("maxIterations", parseInt(e.target.value, 10))}
+            min={1} max={90} className={`${INPUT_CLS} w-28`} style={INPUT_STYLE} />
         </Field>
 
         <Toggle
@@ -153,8 +166,8 @@ export function EditAgentForm({ agent }: { agent: Agent }) {
       </div>
 
       {error && (
-        <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-          <p className="text-sm text-red-400">{error}</p>
+        <div className="px-4 py-3 rounded-xl text-sm" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#f87171" }}>
+          {error}
         </div>
       )}
 
@@ -162,13 +175,15 @@ export function EditAgentForm({ agent }: { agent: Agent }) {
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium rounded-xl transition-all text-sm"
+          className="px-6 py-2.5 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50"
+          style={{ background: "#1d4ed8" }}
         >
           {loading ? "Saving…" : "Save Changes"}
         </button>
         <Link
           href="/dashboard/agents"
-          className="px-5 py-2.5 border border-white/10 hover:border-white/20 rounded-xl text-sm hover:bg-white/5 transition-all"
+          className="px-5 py-2.5 rounded-lg text-sm transition-all"
+          style={{ border: "1px solid #1e2640", color: "#6b7a95" }}
         >
           Cancel
         </Link>
@@ -178,26 +193,29 @@ export function EditAgentForm({ agent }: { agent: Agent }) {
             <button
               type="button"
               onClick={() => setShowDeleteConfirm(true)}
-              className="flex items-center gap-2 px-3 py-2.5 border border-red-500/25 text-red-400/70 hover:border-red-500/50 hover:text-red-400 rounded-xl text-sm transition-all"
+              className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm transition-all"
+              style={{ border: "1px solid rgba(239,68,68,0.25)", color: "rgba(239,68,68,0.7)" }}
             >
               <Trash2 className="w-3.5 h-3.5" />
               Delete Worker
             </button>
           ) : (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Sure? This deletes all tasks too.</span>
+              <span className="text-xs" style={{ color: "#4a5568" }}>Sure? This deletes all tasks too.</span>
               <button
                 type="button"
                 onClick={handleDelete}
                 disabled={deleting}
-                className="px-3 py-1.5 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors"
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all disabled:opacity-50"
+                style={{ background: "#dc2626" }}
               >
                 {deleting ? "Deleting…" : "Yes, delete"}
               </button>
               <button
                 type="button"
                 onClick={() => setShowDeleteConfirm(false)}
-                className="px-3 py-1.5 border border-white/10 rounded-lg text-xs hover:bg-white/5 transition-all"
+                className="px-3 py-1.5 rounded-lg text-xs transition-all"
+                style={{ border: "1px solid #1e2640", color: "#6b7a95" }}
               >
                 Cancel
               </button>
@@ -212,11 +230,11 @@ export function EditAgentForm({ agent }: { agent: Agent }) {
 function Field({ label, children, required, hint }: { label: string; children: React.ReactNode; required?: boolean; hint?: string }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-xs font-medium text-muted-foreground">
-        {label} {required && <span className="text-red-400">*</span>}
+      <label className="text-xs font-medium" style={{ color: "#6b7a95" }}>
+        {label}{required && <span style={{ color: "#ef4444" }}> *</span>}
       </label>
       {children}
-      {hint && <p className="text-xs text-muted-foreground/70">{hint}</p>}
+      {hint && <p className="text-xs" style={{ color: "#3a4455" }}>{hint}</p>}
     </div>
   );
 }
@@ -224,12 +242,13 @@ function Field({ label, children, required, hint }: { label: string; children: R
 function Toggle({ enabled, onToggle, label, hint }: { enabled: boolean; onToggle: () => void; label: string; hint?: string }) {
   return (
     <button type="button" onClick={onToggle} className="flex items-center gap-3 w-full text-left">
-      <div className={`w-10 h-5 rounded-full transition-colors relative shrink-0 ${enabled ? "bg-blue-600" : "bg-white/10"}`}>
-        <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${enabled ? "translate-x-5" : "translate-x-0.5"}`} />
+      <div className="w-10 h-5 rounded-full transition-colors relative shrink-0" style={{ background: enabled ? "#1d4ed8" : "#1e2640" }}>
+        <span className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform"
+          style={{ transform: enabled ? "translateX(20px)" : "translateX(2px)" }} />
       </div>
       <div>
-        <span className="text-sm font-medium">{label}</span>
-        {hint && <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>}
+        <span className="text-sm font-medium text-white">{label}</span>
+        {hint && <p className="text-xs mt-0.5" style={{ color: "#4a5568" }}>{hint}</p>}
       </div>
     </button>
   );
