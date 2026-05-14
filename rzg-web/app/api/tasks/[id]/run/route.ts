@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { lookup } from "node:dns/promises";
+import { isIP } from "node:net";
 import { db } from "@/lib/db";
 import { tasks, taskRuns, taskLogs, agents, memories } from "@/lib/db/schema";
 import { eq, and, or, isNull, desc } from "drizzle-orm";
@@ -11,11 +13,28 @@ type Params = { params: Promise<{ id: string }> };
 const MAX_MEMORY_ENTRIES = 20;
 const MAX_MEMORY_CONTENT_CHARS = 1200;
 const MAX_MEMORY_BLOCK_CHARS = 12000;
+const MAX_HTML_CHARS = 2_000_000;
+const FETCH_TIMEOUT_MS = 10_000;
+const MAX_REDIRECTS = 3;
 
 type MemoryEntry = {
   key: string;
   content: string;
   agentId: string | null;
+};
+
+type WebsiteAuditData = {
+  requestedUrl: string;
+  finalUrl: string;
+  title: string | null;
+  metaDescription: string | null;
+  canonical: string | null;
+  ogTags: Record<string, string>;
+  h1: string[];
+  h2: string[];
+  internalLinksCount: number;
+  imagesMissingAlt: number;
+  wordCount: number;
 };
 
 function truncateMemoryContent(content: string): string {
@@ -39,9 +58,214 @@ function buildMemoryContextBlock(entries: MemoryEntry[], agentId: string): strin
   return `${block.slice(0, MAX_MEMORY_BLOCK_CHARS).trimEnd()}\n\n[Memory context truncated for execution budget.]`;
 }
 
-function buildExecutionPrompt(memoryBlock: string, prompt: string): string {
-  if (!memoryBlock) return prompt;
-  return `${memoryBlock}\n\n## Worker Task\n${prompt}`;
+function buildExecutionPrompt(memoryBlock: string, auditBlock: string, prompt: string): string {
+  if (!memoryBlock && !auditBlock) return prompt;
+  const sections = [memoryBlock, auditBlock, `## Worker Task\n${prompt}`].filter(Boolean);
+  return sections.join("\n\n");
+}
+
+function isWebsiteAuditWorker(agent: { name: string; role: string; goal: string }): boolean {
+  const haystack = `${agent.name} ${agent.role} ${agent.goal}`.toLowerCase();
+  return haystack.includes("website") && haystack.includes("audit");
+}
+
+function extractWebsiteUrl(prompt: string): string | null {
+  const explicit = prompt.match(/https?:\/\/[^\s<>"')]+/i)?.[0];
+  if (explicit) return explicit.replace(/[),.;]+$/, "");
+
+  const bare = prompt.match(/\b(?:www\.)?[a-z0-9][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*)+\b(?:\/[^\s<>"')]*)?/i)?.[0];
+  if (!bare) return null;
+  return `https://${bare.replace(/[),.;]+$/, "")}`;
+}
+
+function isPrivateIp(address: string): boolean {
+  const version = isIP(address);
+  if (version === 4) {
+    const [a, b] = address.split(".").map(Number);
+    return (
+      a === 10 ||
+      a === 127 ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      (a === 169 && b === 254) ||
+      a === 0
+    );
+  }
+  if (version === 6) {
+    const lower = address.toLowerCase();
+    return lower === "::1" || lower.startsWith("fc") || lower.startsWith("fd") || lower.startsWith("fe80:");
+  }
+  return false;
+}
+
+async function validatePublicHttpUrl(rawUrl: string): Promise<URL> {
+  const url = new URL(rawUrl);
+  if (!["http:", "https:"].includes(url.protocol)) {
+    throw new Error("Only http and https URLs can be audited.");
+  }
+
+  const hostname = url.hostname.toLowerCase();
+  if (
+    hostname === "localhost" ||
+    hostname.endsWith(".localhost") ||
+    hostname.endsWith(".local") ||
+    isPrivateIp(hostname)
+  ) {
+    throw new Error("Private or local URLs cannot be audited.");
+  }
+
+  const records = await lookup(hostname, { all: true });
+  if (records.some((record) => isPrivateIp(record.address))) {
+    throw new Error("Private or local network targets cannot be audited.");
+  }
+
+  return url;
+}
+
+async function fetchWebsiteHtml(rawUrl: string, redirects = 0): Promise<{ html: string; finalUrl: string }> {
+  const url = await validatePublicHttpUrl(rawUrl);
+  const res = await fetch(url, {
+    redirect: "manual",
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    headers: {
+      "Accept": "text/html,application/xhtml+xml",
+      "User-Agent": "RZG-AI-Website-Audit/1.0 (+https://rzg.ai)",
+    },
+  });
+
+  if ([301, 302, 303, 307, 308].includes(res.status)) {
+    if (redirects >= MAX_REDIRECTS) throw new Error("Website redirected too many times.");
+    const location = res.headers.get("location");
+    if (!location) throw new Error("Website redirect did not include a location.");
+    return fetchWebsiteHtml(new URL(location, url).toString(), redirects + 1);
+  }
+
+  if (!res.ok) throw new Error(`Website returned HTTP ${res.status}.`);
+
+  const contentType = res.headers.get("content-type") ?? "";
+  if (contentType && !contentType.toLowerCase().includes("html")) {
+    throw new Error(`Expected HTML but received ${contentType}.`);
+  }
+
+  const contentLength = Number(res.headers.get("content-length") ?? "0");
+  if (contentLength > MAX_HTML_CHARS) {
+    throw new Error("Website HTML is too large to audit safely.");
+  }
+
+  const html = (await res.text()).slice(0, MAX_HTML_CHARS);
+  return { html, finalUrl: url.toString() };
+}
+
+function stripHtml(value: string): string {
+  return value
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function decodeBasicEntities(value: string): string {
+  return value
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
+
+function getAttr(tag: string, attr: string): string | null {
+  const match = tag.match(new RegExp(`${attr}\\s*=\\s*["']([^"']*)["']`, "i"));
+  return match ? decodeBasicEntities(match[1].trim()) : null;
+}
+
+function extractHeadings(html: string, level: 1 | 2): string[] {
+  const matches = [...html.matchAll(new RegExp(`<h${level}[^>]*>([\\s\\S]*?)<\\/h${level}>`, "gi"))];
+  return matches.map((m) => decodeBasicEntities(stripHtml(m[1]))).filter(Boolean).slice(0, 12);
+}
+
+function extractWebsiteAudit(html: string, requestedUrl: string, finalUrl: string): WebsiteAuditData {
+  const title = decodeBasicEntities(stripHtml(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "")) || null;
+  const metaTags = [...html.matchAll(/<meta\b[^>]*>/gi)].map((m) => m[0]);
+  const linkTags = [...html.matchAll(/<link\b[^>]*>/gi)].map((m) => m[0]);
+  const anchorTags = [...html.matchAll(/<a\b[^>]*>/gi)].map((m) => m[0]);
+  const imageTags = [...html.matchAll(/<img\b[^>]*>/gi)].map((m) => m[0]);
+  const base = new URL(finalUrl);
+
+  const descriptionTag = metaTags.find((tag) => getAttr(tag, "name")?.toLowerCase() === "description");
+  const canonicalTag = linkTags.find((tag) => getAttr(tag, "rel")?.toLowerCase().split(/\s+/).includes("canonical"));
+  const ogTags: Record<string, string> = {};
+
+  for (const tag of metaTags) {
+    const property = getAttr(tag, "property") ?? getAttr(tag, "name");
+    if (property?.toLowerCase().startsWith("og:")) {
+      const content = getAttr(tag, "content");
+      if (content) ogTags[property] = content;
+    }
+  }
+
+  let internalLinksCount = 0;
+  for (const tag of anchorTags) {
+    const href = getAttr(tag, "href");
+    if (!href || href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) continue;
+    try {
+      const linkUrl = new URL(href, base);
+      if (linkUrl.hostname === base.hostname) internalLinksCount += 1;
+    } catch {
+      // Ignore malformed href values.
+    }
+  }
+
+  const imagesMissingAlt = imageTags.filter((tag) => {
+    const alt = getAttr(tag, "alt");
+    return alt === null || alt.trim() === "";
+  }).length;
+
+  const text = stripHtml(html);
+  const wordCount = text ? text.split(/\s+/).filter(Boolean).length : 0;
+
+  return {
+    requestedUrl,
+    finalUrl,
+    title,
+    metaDescription: descriptionTag ? getAttr(descriptionTag, "content") : null,
+    canonical: canonicalTag ? getAttr(canonicalTag, "href") : null,
+    ogTags,
+    h1: extractHeadings(html, 1),
+    h2: extractHeadings(html, 2),
+    internalLinksCount,
+    imagesMissingAlt,
+    wordCount,
+  };
+}
+
+function buildWebsiteAuditContext(audit: WebsiteAuditData): string {
+  const ogSummary = Object.entries(audit.ogTags)
+    .map(([key, value]) => `  - ${key}: ${value}`)
+    .join("\n") || "  - None found";
+
+  return `## Website Audit Findings
+Source URL: ${audit.requestedUrl}
+Fetched URL: ${audit.finalUrl}
+
+### SEO Structure
+- Title: ${audit.title ?? "Missing"}
+- Meta description: ${audit.metaDescription ?? "Missing"}
+- Canonical: ${audit.canonical ?? "Missing"}
+- Word count estimate: ${audit.wordCount}
+- Internal links found: ${audit.internalLinksCount}
+- Images missing alt text: ${audit.imagesMissingAlt}
+
+### H1 Headings
+${audit.h1.length ? audit.h1.map((h) => `- ${h}`).join("\n") : "- None found"}
+
+### H2 Headings
+${audit.h2.length ? audit.h2.map((h) => `- ${h}`).join("\n") : "- None found"}
+
+### Open Graph Tags
+${ogSummary}
+
+Use these fetched website findings to generate a professional, prioritized website audit. Include conversion, SEO, accessibility, content, and trust-signal recommendations. Be specific and actionable.`;
 }
 
 export async function POST(req: NextRequest, { params }: Params) {
@@ -66,6 +290,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!agent) return errorResponse("Agent not found", 404);
 
   const prompt = parsed.data.overridePrompt || task.prompt;
+  const websiteUrl = isWebsiteAuditWorker(agent) ? extractWebsiteUrl(prompt) : null;
 
   let memoryContext = "";
   let memoryCount = 0;
@@ -95,8 +320,6 @@ export async function POST(req: NextRequest, { params }: Params) {
     memoryContext = buildMemoryContextBlock(memoryEntries, agent.id);
   }
 
-  const executionPrompt = buildExecutionPrompt(memoryContext, prompt);
-
   // Create task run record
   const [run] = await db
     .insert(taskRuns)
@@ -118,6 +341,105 @@ export async function POST(req: NextRequest, { params }: Params) {
   const stream = new ReadableStream({
     async start(controller) {
       try {
+        const emitEvent = async (event: {
+          type: string;
+          content: string;
+          tool_name?: string | null;
+          metadata?: Record<string, unknown> | null;
+        }) => {
+          const raw = JSON.stringify(event);
+          controller.enqueue(encoder.encode(`data: ${raw}\n\n`));
+          await db.insert(taskLogs).values({
+            taskRunId: run.id,
+            eventType: event.type,
+            content: event.content,
+            toolName: event.tool_name ?? null,
+            metadata: event.metadata ?? null,
+          });
+        };
+
+        if (memoryCount > 0) {
+          await emitEvent({
+            type: "memory_loaded",
+            content: `Loaded ${memoryCount} memory ${memoryCount === 1 ? "entry" : "entries"} for this run.`,
+            metadata: { count: memoryCount },
+          });
+        }
+
+        let auditContext = "";
+        if (websiteUrl) {
+          let activeAuditTool: string | null = null;
+          try {
+            activeAuditTool = "website_fetch";
+            await emitEvent({
+              type: "tool_start",
+              tool_name: "website_fetch",
+              content: `Fetching website: ${websiteUrl}`,
+            });
+            const { html, finalUrl } = await fetchWebsiteHtml(websiteUrl);
+            await emitEvent({
+              type: "tool_end",
+              tool_name: "website_fetch",
+              content: `Fetched website HTML from ${finalUrl}`,
+              metadata: { url: websiteUrl, finalUrl },
+            });
+            activeAuditTool = null;
+
+            activeAuditTool = "seo_parse";
+            await emitEvent({
+              type: "tool_start",
+              tool_name: "seo_parse",
+              content: "Parsing SEO structure",
+            });
+            const audit = extractWebsiteAudit(html, websiteUrl, finalUrl);
+            await emitEvent({
+              type: "tool_end",
+              tool_name: "seo_parse",
+              content: `Parsed SEO structure: ${audit.h1.length} H1, ${audit.h2.length} H2, ${audit.imagesMissingAlt} images missing alt text.`,
+              metadata: {
+                h1Count: audit.h1.length,
+                h2Count: audit.h2.length,
+                internalLinksCount: audit.internalLinksCount,
+                imagesMissingAlt: audit.imagesMissingAlt,
+                wordCount: audit.wordCount,
+              },
+            });
+            activeAuditTool = null;
+
+            activeAuditTool = "audit_build";
+            await emitEvent({
+              type: "tool_start",
+              tool_name: "audit_build",
+              content: "Building audit",
+            });
+            auditContext = buildWebsiteAuditContext(audit);
+            await emitEvent({
+              type: "tool_end",
+              tool_name: "audit_build",
+              content: "Built structured website audit context",
+            });
+            activeAuditTool = null;
+          } catch (auditErr) {
+            const msg = auditErr instanceof Error ? auditErr.message : "Unknown website audit error";
+            await emitEvent({
+              type: "tool_end",
+              tool_name: activeAuditTool ?? "website_fetch",
+              content: `Website audit preflight skipped: ${msg}`,
+              metadata: { error: msg, url: websiteUrl },
+            });
+          }
+        }
+
+        const executionPrompt = buildExecutionPrompt(memoryContext, auditContext, prompt);
+
+        if (websiteUrl) {
+          await emitEvent({
+            type: "tool_start",
+            tool_name: "recommendation_generation",
+            content: "Generating recommendations",
+          });
+        }
+
         const adapterRes = await streamExecution({
           task_run_id: run.id,
           message: executionPrompt,
@@ -136,15 +458,6 @@ export async function POST(req: NextRequest, { params }: Params) {
         });
 
         if (!adapterRes.body) throw new Error("No response body from adapter");
-
-        if (memoryCount > 0) {
-          await db.insert(taskLogs).values({
-            taskRunId: run.id,
-            eventType: "memory_loaded",
-            content: `Loaded ${memoryCount} memory ${memoryCount === 1 ? "entry" : "entries"} for this run.`,
-            metadata: { count: memoryCount },
-          });
-        }
 
         const reader = adapterRes.body.getReader();
         const decoder = new TextDecoder();
@@ -187,6 +500,14 @@ export async function POST(req: NextRequest, { params }: Params) {
               // Malformed JSON from adapter — skip persisting, still forward
             }
           }
+        }
+
+        if (websiteUrl) {
+          await emitEvent({
+            type: "tool_end",
+            tool_name: "recommendation_generation",
+            content: "Generated website audit recommendations",
+          });
         }
 
         // Finalize task run

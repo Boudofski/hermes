@@ -164,6 +164,7 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
     <div className="min-w-0 max-w-full space-y-4 overflow-hidden">
       <ExecutionStages
         running={running}
+        logs={logs}
         hasLogs={logs.length > 0}
         hasTools={toolEvents.length > 0}
         hasTextOutput={hasTextOutput}
@@ -318,6 +319,7 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
 
 function ExecutionStages({
   running,
+  logs,
   hasLogs,
   hasTools,
   hasTextOutput,
@@ -325,13 +327,32 @@ function ExecutionStages({
   failed,
 }: {
   running: boolean;
+  logs: ConsoleLog[];
   hasLogs: boolean;
   hasTools: boolean;
   hasTextOutput: boolean;
   hasResult: boolean;
   failed: boolean;
 }) {
-  const stages = [
+  const auditToolStages = [
+    { toolName: "website_fetch", label: "Fetching website" },
+    { toolName: "seo_parse", label: "Parsing SEO structure" },
+    { toolName: "audit_build", label: "Building audit" },
+    { toolName: "recommendation_generation", label: "Generating recommendations" },
+  ];
+  const hasWebsiteAuditStages = logs.some((log) =>
+    auditToolStages.some((stage) => stage.toolName === log.toolName)
+  );
+
+  const stages = hasWebsiteAuditStages ? auditToolStages.map((stage) => {
+    const started = logs.some((log) => log.toolName === stage.toolName && log.type === "tool_start");
+    const done = logs.some((log) => log.toolName === stage.toolName && log.type === "tool_end");
+    return {
+      label: stage.label,
+      done,
+      active: running && started && !done,
+    };
+  }) : [
     { label: "Reading task", done: hasLogs || hasResult, active: running && !hasLogs },
     { label: "Loading memory", done: hasLogs || hasResult, active: running && hasLogs && !hasTextOutput && !hasTools },
     { label: "Planning", done: hasTextOutput || hasTools || hasResult, active: running && hasLogs && !hasTextOutput && !hasTools },
@@ -346,7 +367,7 @@ function ExecutionStages({
         <p className="eyebrow">Execution Stages</p>
         <span className="text-xs font-semibold text-slate-300">Live stage view</span>
       </div>
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
+      <div className={`grid gap-2 sm:grid-cols-2 ${hasWebsiteAuditStages ? "xl:grid-cols-4" : "xl:grid-cols-6"}`}>
         {stages.map((stage) => (
           <div key={stage.label} className={`rounded-xl border px-3 py-3 ${stage.active ? "border-cyan-300/40 bg-cyan-300/10" : stage.done ? "border-emerald-300/25 bg-emerald-400/10" : "border-white/10 bg-white/[0.025]"}`}>
             <div className="flex items-center gap-2">
@@ -460,7 +481,8 @@ function LogLine({ log }: { log: ConsoleLog }) {
     return (
       <div className="exec-line log-tool">
         <span className="log-sys shrink-0">▶</span>
-        <span className="break-words">{log.toolName ?? log.content}</span>
+        <span className="break-words">{log.content}</span>
+        {log.toolName && <span className="log-sys text-xs">{log.toolName}</span>}
         <span className="log-sys text-xs">starting...</span>
       </div>
     );
@@ -469,7 +491,8 @@ function LogLine({ log }: { log: ConsoleLog }) {
     return (
       <div className="exec-line log-done">
         <span className="log-sys shrink-0">✓</span>
-        <span className="break-words">{log.toolName ?? log.content}</span>
+        <span className="break-words">{log.content}</span>
+        {log.toolName && <span className="log-sys text-xs">{log.toolName}</span>}
       </div>
     );
   }
