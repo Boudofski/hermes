@@ -37,6 +37,16 @@ type WebsiteAuditData = {
   wordCount: number;
 };
 
+type CompetitorInsightData = Pick<
+  WebsiteAuditData,
+  "requestedUrl" | "finalUrl" | "title" | "metaDescription" | "canonical" | "h1" | "h2" | "wordCount"
+> & {
+  ogTitle: string | null;
+  ogDescription: string | null;
+  primaryCtas: string[];
+  error?: string;
+};
+
 function truncateMemoryContent(content: string): string {
   if (content.length <= MAX_MEMORY_CONTENT_CHARS) return content;
   return `${content.slice(0, MAX_MEMORY_CONTENT_CHARS).trimEnd()}...`;
@@ -58,9 +68,9 @@ function buildMemoryContextBlock(entries: MemoryEntry[], agentId: string): strin
   return `${block.slice(0, MAX_MEMORY_BLOCK_CHARS).trimEnd()}\n\n[Memory context truncated for execution budget.]`;
 }
 
-function buildExecutionPrompt(memoryBlock: string, auditBlock: string, prompt: string): string {
-  if (!memoryBlock && !auditBlock) return prompt;
-  const sections = [memoryBlock, auditBlock, `## Worker Task\n${prompt}`].filter(Boolean);
+function buildExecutionPrompt(memoryBlock: string, auditBlock: string, competitorBlock: string, prompt: string): string {
+  if (!memoryBlock && !auditBlock && !competitorBlock) return prompt;
+  const sections = [memoryBlock, auditBlock, competitorBlock, `## Worker Task\n${prompt}`].filter(Boolean);
   return sections.join("\n\n");
 }
 
@@ -69,13 +79,36 @@ function isWebsiteAuditWorker(agent: { name: string; role: string; goal: string 
   return haystack.includes("website") && haystack.includes("audit");
 }
 
-function extractWebsiteUrl(prompt: string): string | null {
-  const explicit = prompt.match(/https?:\/\/[^\s<>"')]+/i)?.[0];
-  if (explicit) return explicit.replace(/[),.;]+$/, "");
+function isCompetitorIntelligenceWorker(agent: { name: string; role: string; goal: string }): boolean {
+  const haystack = `${agent.name} ${agent.role} ${agent.goal}`.toLowerCase();
+  return haystack.includes("competitor") && (haystack.includes("intelligence") || haystack.includes("research"));
+}
 
-  const bare = prompt.match(/\b(?:www\.)?[a-z0-9][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*)+\b(?:\/[^\s<>"')]*)?/i)?.[0];
-  if (!bare) return null;
-  return `https://${bare.replace(/[),.;]+$/, "")}`;
+function extractWebsiteUrl(prompt: string): string | null {
+  return extractWebsiteUrls(prompt, 1)[0] ?? null;
+}
+
+function normalizeUrl(rawUrl: string): string {
+  return rawUrl.replace(/[),.;]+$/, "");
+}
+
+function extractWebsiteUrls(prompt: string, limit = 5): string[] {
+  const urls = new Map<string, string>();
+  const explicitMatches = prompt.matchAll(/https?:\/\/[^\s<>"')]+/gi);
+  for (const match of explicitMatches) {
+    const normalized = normalizeUrl(match[0]);
+    urls.set(normalized.toLowerCase(), normalized);
+    if (urls.size >= limit) return [...urls.values()];
+  }
+
+  const bareMatches = prompt.matchAll(/\b(?:www\.)?[a-z0-9][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*)+\b(?:\/[^\s<>"')]*)?/gi);
+  for (const match of bareMatches) {
+    const normalized = `https://${normalizeUrl(match[0])}`;
+    urls.set(normalized.toLowerCase(), normalized);
+    if (urls.size >= limit) break;
+  }
+
+  return [...urls.values()];
 }
 
 function isPrivateIp(address: string): boolean {
@@ -239,6 +272,45 @@ function extractWebsiteAudit(html: string, requestedUrl: string, finalUrl: strin
   };
 }
 
+function extractPrimaryCtas(html: string): string[] {
+  const candidates = [
+    ...html.matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/gi),
+    ...html.matchAll(/<button\b[^>]*>([\s\S]*?)<\/button>/gi),
+  ];
+  const ctaPattern = /\b(get started|start free|book (?:a )?(?:demo|call)|schedule (?:a )?(?:demo|call)|contact sales|contact us|request (?:a )?demo|try (?:it )?free|sign up|join now|buy now|learn more|see pricing|view pricing|talk to sales|subscribe|download)\b/i;
+  const seen = new Set<string>();
+  const phrases: string[] = [];
+
+  for (const candidate of candidates) {
+    const text = decodeBasicEntities(stripHtml(candidate[1])).replace(/\s+/g, " ").trim();
+    if (!text || text.length > 80 || !ctaPattern.test(text)) continue;
+    const key = text.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    phrases.push(text);
+    if (phrases.length >= 8) break;
+  }
+
+  return phrases;
+}
+
+function extractCompetitorInsight(html: string, requestedUrl: string, finalUrl: string): CompetitorInsightData {
+  const audit = extractWebsiteAudit(html, requestedUrl, finalUrl);
+  return {
+    requestedUrl: audit.requestedUrl,
+    finalUrl: audit.finalUrl,
+    title: audit.title,
+    metaDescription: audit.metaDescription,
+    canonical: audit.canonical,
+    h1: audit.h1,
+    h2: audit.h2,
+    wordCount: audit.wordCount,
+    ogTitle: audit.ogTags["og:title"] ?? null,
+    ogDescription: audit.ogTags["og:description"] ?? null,
+    primaryCtas: extractPrimaryCtas(html),
+  };
+}
+
 function buildWebsiteAuditContext(audit: WebsiteAuditData): string {
   const ogSummary = Object.entries(audit.ogTags)
     .map(([key, value]) => `  - ${key}: ${value}`)
@@ -268,6 +340,42 @@ ${ogSummary}
 Use these fetched website findings to generate a professional, prioritized website audit. Include conversion, SEO, accessibility, content, and trust-signal recommendations. Be specific and actionable.`;
 }
 
+function buildCompetitorIntelligenceContext(competitors: CompetitorInsightData[]): string {
+  const rows = competitors.map((competitor, index) => {
+    if (competitor.error) {
+      return `### Competitor ${index + 1}: ${competitor.requestedUrl}
+- Fetch status: Unavailable
+- Error: ${competitor.error}`;
+    }
+
+    return `### Competitor ${index + 1}: ${competitor.finalUrl}
+- Requested URL: ${competitor.requestedUrl}
+- Title: ${competitor.title ?? "Missing"}
+- Meta description: ${competitor.metaDescription ?? "Missing"}
+- Canonical: ${competitor.canonical ?? "Missing"}
+- OG title: ${competitor.ogTitle ?? "Missing"}
+- OG description: ${competitor.ogDescription ?? "Missing"}
+- Word count estimate: ${competitor.wordCount}
+- H1 headings: ${competitor.h1.length ? competitor.h1.join(" | ") : "None found"}
+- H2 headings: ${competitor.h2.length ? competitor.h2.slice(0, 8).join(" | ") : "None found"}
+- Primary CTA phrases: ${competitor.primaryCtas.length ? competitor.primaryCtas.join(" | ") : "None detected"}`;
+  });
+
+  return `## Competitor Intelligence Context
+RZG fetched and parsed the competitor websites below before generation. Use this evidence as the basis for the strategy.
+
+${rows.join("\n\n")}
+
+Produce a professional competitor intelligence report with:
+- Competitor matrix
+- Positioning gaps
+- Offer opportunities
+- Differentiation strategy
+- Recommended next actions
+
+Ground conclusions in the fetched positioning signals. If a competitor could not be fetched, note that limitation without inventing facts.`;
+}
+
 export async function POST(req: NextRequest, { params }: Params) {
   const { id } = await params;
   const auth = await getAuthenticatedWorkspace();
@@ -290,7 +398,9 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!agent) return errorResponse("Agent not found", 404);
 
   const prompt = parsed.data.overridePrompt || task.prompt;
-  const websiteUrl = isWebsiteAuditWorker(agent) ? extractWebsiteUrl(prompt) : null;
+  const isCompetitorWorker = isCompetitorIntelligenceWorker(agent);
+  const websiteUrl = !isCompetitorWorker && isWebsiteAuditWorker(agent) ? extractWebsiteUrl(prompt) : null;
+  const competitorUrls = isCompetitorWorker ? extractWebsiteUrls(prompt, 5) : [];
 
   let memoryContext = "";
   let memoryCount = 0;
@@ -430,13 +540,140 @@ export async function POST(req: NextRequest, { params }: Params) {
           }
         }
 
-        const executionPrompt = buildExecutionPrompt(memoryContext, auditContext, prompt);
+        let competitorContext = "";
+        if (isCompetitorWorker) {
+          const competitors: CompetitorInsightData[] = [];
+          let activeCompetitorTool: string | null = null;
+
+          try {
+            activeCompetitorTool = "competitor_detect";
+            await emitEvent({
+              type: "tool_start",
+              tool_name: "competitor_detect",
+              content: "Detecting competitors",
+            });
+            await emitEvent({
+              type: "tool_end",
+              tool_name: "competitor_detect",
+              content: `Detected ${competitorUrls.length} competitor ${competitorUrls.length === 1 ? "URL" : "URLs"}.`,
+              metadata: { count: competitorUrls.length, urls: competitorUrls },
+            });
+            activeCompetitorTool = null;
+
+            if (competitorUrls.length > 0) {
+              activeCompetitorTool = "competitor_fetch";
+              await emitEvent({
+                type: "tool_start",
+                tool_name: "competitor_fetch",
+                content: "Fetching competitor sites",
+              });
+
+              const fetchedSites: Array<{ requestedUrl: string; html: string; finalUrl: string } | { requestedUrl: string; error: string }> = [];
+              for (const url of competitorUrls) {
+                try {
+                  const { html, finalUrl } = await fetchWebsiteHtml(url);
+                  fetchedSites.push({ requestedUrl: url, html, finalUrl });
+                } catch (fetchErr) {
+                  fetchedSites.push({
+                    requestedUrl: url,
+                    error: fetchErr instanceof Error ? fetchErr.message : "Unknown fetch error",
+                  });
+                }
+              }
+
+              const successfulFetches = fetchedSites.filter((site) => "html" in site).length;
+              await emitEvent({
+                type: "tool_end",
+                tool_name: "competitor_fetch",
+                content: `Fetched ${successfulFetches} of ${competitorUrls.length} competitor sites.`,
+                metadata: { requested: competitorUrls.length, fetched: successfulFetches },
+              });
+              activeCompetitorTool = null;
+
+              activeCompetitorTool = "positioning_parse";
+              await emitEvent({
+                type: "tool_start",
+                tool_name: "positioning_parse",
+                content: "Parsing positioning",
+              });
+
+              for (const site of fetchedSites) {
+                if ("error" in site) {
+                  competitors.push({
+                    requestedUrl: site.requestedUrl,
+                    finalUrl: site.requestedUrl,
+                    title: null,
+                    metaDescription: null,
+                    canonical: null,
+                    h1: [],
+                    h2: [],
+                    wordCount: 0,
+                    ogTitle: null,
+                    ogDescription: null,
+                    primaryCtas: [],
+                    error: site.error,
+                  });
+                  continue;
+                }
+                competitors.push(extractCompetitorInsight(site.html, site.requestedUrl, site.finalUrl));
+              }
+
+              await emitEvent({
+                type: "tool_end",
+                tool_name: "positioning_parse",
+                content: `Parsed positioning signals for ${competitors.filter((c) => !c.error).length} competitors.`,
+                metadata: {
+                  parsed: competitors.filter((c) => !c.error).length,
+                  failed: competitors.filter((c) => c.error).length,
+                },
+              });
+              activeCompetitorTool = null;
+            }
+
+            activeCompetitorTool = "comparison_matrix";
+            await emitEvent({
+              type: "tool_start",
+              tool_name: "comparison_matrix",
+              content: "Building comparison matrix",
+            });
+            competitorContext = competitors.length > 0
+              ? buildCompetitorIntelligenceContext(competitors)
+              : `## Competitor Intelligence Context
+No valid competitor URLs were detected in the task prompt. Ask the user for 2-5 public competitor URLs before making evidence-based claims.`;
+            await emitEvent({
+              type: "tool_end",
+              tool_name: "comparison_matrix",
+              content: competitors.length > 0
+                ? `Built comparison context for ${competitors.length} competitors.`
+                : "No competitor comparison context could be built.",
+              metadata: { count: competitors.length },
+            });
+            activeCompetitorTool = null;
+          } catch (competitorErr) {
+            const msg = competitorErr instanceof Error ? competitorErr.message : "Unknown competitor intelligence error";
+            await emitEvent({
+              type: "tool_end",
+              tool_name: activeCompetitorTool ?? "competitor_detect",
+              content: `Competitor intelligence preflight skipped: ${msg}`,
+              metadata: { error: msg },
+            });
+          }
+        }
+
+        const executionPrompt = buildExecutionPrompt(memoryContext, auditContext, competitorContext, prompt);
 
         if (websiteUrl) {
           await emitEvent({
             type: "tool_start",
             tool_name: "recommendation_generation",
             content: "Generating recommendations",
+          });
+        }
+        if (isCompetitorWorker) {
+          await emitEvent({
+            type: "tool_start",
+            tool_name: "strategy_generation",
+            content: "Generating strategy",
           });
         }
 
@@ -507,6 +744,13 @@ export async function POST(req: NextRequest, { params }: Params) {
             type: "tool_end",
             tool_name: "recommendation_generation",
             content: "Generated website audit recommendations",
+          });
+        }
+        if (isCompetitorWorker) {
+          await emitEvent({
+            type: "tool_end",
+            tool_name: "strategy_generation",
+            content: "Generated competitor intelligence strategy",
           });
         }
 

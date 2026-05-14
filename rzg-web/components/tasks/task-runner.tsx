@@ -340,11 +340,22 @@ function ExecutionStages({
     { toolName: "audit_build", label: "Building audit" },
     { toolName: "recommendation_generation", label: "Generating recommendations" },
   ];
+  const competitorToolStages = [
+    { toolName: "competitor_detect", label: "Detecting competitors" },
+    { toolName: "competitor_fetch", label: "Fetching competitor sites" },
+    { toolName: "positioning_parse", label: "Parsing positioning" },
+    { toolName: "comparison_matrix", label: "Building comparison matrix" },
+    { toolName: "strategy_generation", label: "Generating strategy" },
+  ];
+  const hasCompetitorStages = logs.some((log) =>
+    competitorToolStages.some((stage) => stage.toolName === log.toolName)
+  );
   const hasWebsiteAuditStages = logs.some((log) =>
     auditToolStages.some((stage) => stage.toolName === log.toolName)
   );
+  const operationalStages = hasCompetitorStages ? competitorToolStages : auditToolStages;
 
-  const stages = hasWebsiteAuditStages ? auditToolStages.map((stage) => {
+  const stages = (hasCompetitorStages || hasWebsiteAuditStages) ? operationalStages.map((stage) => {
     const started = logs.some((log) => log.toolName === stage.toolName && log.type === "tool_start");
     const done = logs.some((log) => log.toolName === stage.toolName && log.type === "tool_end");
     return {
@@ -367,7 +378,7 @@ function ExecutionStages({
         <p className="eyebrow">Execution Stages</p>
         <span className="text-xs font-semibold text-slate-300">Live stage view</span>
       </div>
-      <div className={`grid gap-2 sm:grid-cols-2 ${hasWebsiteAuditStages ? "xl:grid-cols-4" : "xl:grid-cols-6"}`}>
+      <div className={`grid gap-2 sm:grid-cols-2 ${(hasCompetitorStages || hasWebsiteAuditStages) ? "xl:grid-cols-5" : "xl:grid-cols-6"}`}>
         {stages.map((stage) => (
           <div key={stage.label} className={`rounded-xl border px-3 py-3 ${stage.active ? "border-cyan-300/40 bg-cyan-300/10" : stage.done ? "border-emerald-300/25 bg-emerald-400/10" : "border-white/10 bg-white/[0.025]"}`}>
             <div className="flex items-center gap-2">
