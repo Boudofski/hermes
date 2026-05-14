@@ -82,6 +82,8 @@ export default async function DashboardPage() {
             <MetricCard label="Memories" value={memoryCount.count} icon={<Brain className="h-5 w-5" />} detail="Persistent context entries in the vault." />
           </div>
 
+          {!hasMemories && <MemoryOnboarding />}
+
           <section className="surface-panel p-5 sm:p-6">
             <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
@@ -202,6 +204,16 @@ export default async function DashboardPage() {
 
         <aside className="min-w-0 space-y-6">
           <div className="surface-card p-5">
+            <p className="eyebrow">Workspace Usage</p>
+            <div className="mt-4 space-y-3">
+              <UsageRow label="Missions" value={taskCount.count} />
+              <UsageRow label="Workers" value={agentCount.count} />
+              <UsageRow label="Memories" value={memoryCount.count} />
+            </div>
+            <p className="mt-4 text-xs leading-5 text-slate-300">Billing limits are not enforced yet. This is your current workspace activity.</p>
+          </div>
+
+          <div className="surface-card p-5">
             <p className="eyebrow">Suggested Next Actions</p>
             <div className="mt-4 space-y-3">
               {!hasMemories && <QuickLaunch href="/dashboard/memory" icon={<Brain className="h-5 w-5" />} title="Add business memory" detail="Store services, pricing, brand voice, SOPs, and positioning." />}
@@ -224,6 +236,44 @@ export default async function DashboardPage() {
           </div>
         </aside>
       </div>
+    </div>
+  );
+}
+
+function MemoryOnboarding() {
+  const categories = ["Brand Voice", "Services", "Pricing", "Target Clients", "Competitors", "Offer Positioning", "SOPs"];
+  return (
+    <section className="surface-panel p-5 sm:p-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="max-w-2xl">
+          <p className="eyebrow">Business Memory Setup</p>
+          <h2 className="mt-1 text-xl font-bold text-white">Set up memory for sharper outputs</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-300">
+            RZG uses memory to personalize proposals, audits, content, strategy, and operating plans with your real services, pricing, voice, and SOPs.
+          </p>
+        </div>
+        <Link href="/dashboard/memory" className="button-primary shrink-0 px-4 py-2.5">
+          <Brain className="h-4 w-4" />
+          Set up Memory
+        </Link>
+      </div>
+      <div className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        {categories.map((category) => (
+          <Link key={category} href={`/dashboard/memory?key=${encodeURIComponent(category.toLowerCase().replace(/\s+/g, "_"))}`} className="rounded-xl border border-white/10 bg-white/[0.035] px-3 py-3 transition hover:border-cyan-300/25 hover:bg-cyan-300/10">
+            <p className="text-sm font-bold text-white">{category}</p>
+            <p className="mt-1 text-xs leading-5 text-slate-300">Add example context</p>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function UsageRow({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2">
+      <span className="text-sm font-semibold text-slate-300">{label}</span>
+      <span className="font-mono text-sm font-black text-white">{value}</span>
     </div>
   );
 }

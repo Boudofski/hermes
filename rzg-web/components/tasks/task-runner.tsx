@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import {
   Play, Square, RefreshCw, CheckCircle2, AlertCircle,
   Clock, ChevronDown, ChevronUp, RotateCcw, Terminal,
-  Wrench, Activity,
+  Wrench, Activity, Copy, Download, FileText,
 } from "lucide-react";
 
 type LogEvent = {
@@ -36,7 +37,7 @@ type HistoryRun = {
 type ConsoleLog = { type: string; content: string; toolName?: string | null };
 
 interface Props {
-  task: { id: string; name: string; status: string };
+  task: { id: string; name: string; status: string; prompt?: string };
   agent: { id: string; name: string } | null;
   initialRun: Run;
   initialLogs: LogEvent[];
@@ -69,6 +70,7 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
   const [finalResponse, setFinalResponse] = useState<string | null>(initialRun?.finalResponse ?? null);
   const [error, setError] = useState<string | null>(initialRun?.errorMessage ?? null);
   const [runStatus, setRunStatus] = useState(initialRun?.status ?? "idle");
+  const [copied, setCopied] = useState<string | null>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const autorunStartedRef = useRef(false);
@@ -169,6 +171,25 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
   const hasResult = !!finalResponse || !!error;
   const toolEvents = logs.filter((l) => l.type === "tool_start" || l.type === "tool_end");
   const hasTextOutput = logs.some((l) => l.type === "text_delta");
+  const liveText = logs.filter((l) => l.type === "text_delta").map((l) => l.content).join("");
+
+  async function copyText(value: string, label: string) {
+    await navigator.clipboard.writeText(value);
+    setCopied(label);
+    window.setTimeout(() => setCopied(null), 1600);
+  }
+
+  function downloadText(value: string, extension: "txt" | "md") {
+    const blob = new Blob([value], { type: extension === "md" ? "text/markdown;charset=utf-8" : "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${task.name.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "rzg-output"}.${extension}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <div className="min-w-0 max-w-full space-y-4 overflow-hidden">
@@ -182,8 +203,33 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
         failed={isFailed}
       />
 
+      {finalResponse && (
+        <FinalOutputPanel
+          finalResponse={finalResponse}
+          copied={copied}
+          onCopy={() => copyText(finalResponse, "output")}
+          onCopyPrompt={task.prompt ? () => copyText(task.prompt!, "prompt") : undefined}
+          onDownloadTxt={() => downloadText(finalResponse, "txt")}
+          onDownloadMd={() => downloadText(finalResponse, "md")}
+          agentId={agent?.id}
+        />
+      )}
+
+      {!finalResponse && running && liveText && (
+        <div className="surface-card overflow-hidden">
+          <div className="flex items-center gap-2 border-b border-white/10 px-5 py-4">
+            <Activity className="h-4 w-4 text-cyan-200" />
+            <span className="eyebrow">Live Answer</span>
+          </div>
+          <div className="p-5">
+            <pre className="max-h-72 whitespace-pre-wrap break-words font-sans text-sm leading-7 text-slate-100">{liveText}</pre>
+          </div>
+        </div>
+      )}
+
       {/* ── Execution console header ── */}
-      <div className="console-shell min-w-0">
+      <details className="console-shell min-w-0" open={running || !finalResponse}>
+        <summary className="cursor-pointer list-none">
         {/* Console title bar */}
         <div className="console-header">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -213,6 +259,7 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
             )}
           </div>
         </div>
+        </summary>
 
         {/* Controls bar */}
         <div className="flex flex-wrap items-center gap-3 border-b border-white/10 bg-white/[0.025] px-4 py-3">
@@ -291,7 +338,7 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
             </p>
           </div>
         )}
-      </div>
+      </details>
 
       {/* ── Error panel ── */}
       {error && (
@@ -306,23 +353,69 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
         </div>
       )}
 
-      {/* ── Final output panel ── */}
-      {finalResponse && (
-        <div className="surface-card overflow-hidden">
-          <div className="flex items-center gap-2 border-b border-white/10 px-5 py-4">
-            <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
-            <span className="eyebrow">Final Output</span>
-          </div>
-          <div className="p-5">
-            <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-7 text-slate-100">{finalResponse}</pre>
-          </div>
-        </div>
-      )}
-
       {/* ── Run history ── */}
       {runHistory.length > 0 && (
         <RunHistory runs={runHistory} />
       )}
+    </div>
+  );
+}
+
+function FinalOutputPanel({
+  finalResponse,
+  copied,
+  onCopy,
+  onCopyPrompt,
+  onDownloadTxt,
+  onDownloadMd,
+  agentId,
+}: {
+  finalResponse: string;
+  copied: string | null;
+  onCopy: () => void;
+  onCopyPrompt?: () => void;
+  onDownloadTxt: () => void;
+  onDownloadMd: () => void;
+  agentId?: string;
+}) {
+  return (
+    <div className="surface-card overflow-hidden">
+      <div className="flex flex-col gap-3 border-b border-white/10 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center gap-2">
+          <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
+          <span className="eyebrow">Final Output</span>
+          {copied && <span className="badge badge-green">Copied {copied}</span>}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={onCopy} className="button-secondary px-3 py-2 text-xs">
+            <Copy className="h-3.5 w-3.5" />
+            Copy Output
+          </button>
+          {onCopyPrompt && (
+            <button type="button" onClick={onCopyPrompt} className="button-secondary px-3 py-2 text-xs">
+              <FileText className="h-3.5 w-3.5" />
+              Copy Prompt
+            </button>
+          )}
+          <button type="button" onClick={onDownloadTxt} className="button-secondary px-3 py-2 text-xs">
+            <Download className="h-3.5 w-3.5" />
+            .txt
+          </button>
+          <button type="button" onClick={onDownloadMd} className="button-secondary px-3 py-2 text-xs">
+            <Download className="h-3.5 w-3.5" />
+            .md
+          </button>
+          {agentId && (
+            <Link href="/dashboard/command" className="button-primary px-3 py-2 text-xs">
+              <RefreshCw className="h-3.5 w-3.5" />
+              New Mission
+            </Link>
+          )}
+        </div>
+      </div>
+      <div className="p-5">
+        <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-7 text-slate-100">{finalResponse}</pre>
+      </div>
     </div>
   );
 }

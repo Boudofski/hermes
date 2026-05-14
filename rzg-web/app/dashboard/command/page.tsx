@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
-import { agents, workspaces } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { agents, memories, workspaces } from "@/lib/db/schema";
+import { count, eq } from "drizzle-orm";
 import { PageTitle } from "@/components/ui/page-title";
 import { CommandCenterForm } from "@/components/command/command-center-form";
 import { Terminal } from "lucide-react";
@@ -13,17 +13,20 @@ export default async function CommandPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   const [workspace] = await db.select().from(workspaces).where(eq(workspaces.ownerId, user!.id)).limit(1);
-  const workerRows = await db
-    .select({
-      id: agents.id,
-      name: agents.name,
-      role: agents.role,
-      goal: agents.goal,
-      model: agents.model,
-      memoryEnabled: agents.memoryEnabled,
-    })
-    .from(agents)
-    .where(eq(agents.workspaceId, workspace.id));
+  const [workerRows, [memoryCount]] = await Promise.all([
+    db
+      .select({
+        id: agents.id,
+        name: agents.name,
+        role: agents.role,
+        goal: agents.goal,
+        model: agents.model,
+        memoryEnabled: agents.memoryEnabled,
+      })
+      .from(agents)
+      .where(eq(agents.workspaceId, workspace.id)),
+    db.select({ count: count() }).from(memories).where(eq(memories.workspaceId, workspace.id)),
+  ]);
 
   return (
     <div className="min-h-screen min-w-0 max-w-full pb-28 md:pb-0">
@@ -40,7 +43,7 @@ export default async function CommandPage() {
       />
 
       <div className="min-w-0 p-4 sm:p-6 lg:p-8">
-        <CommandCenterForm workers={workerRows} />
+        <CommandCenterForm workers={workerRows} memoryCount={memoryCount.count} />
       </div>
     </div>
   );

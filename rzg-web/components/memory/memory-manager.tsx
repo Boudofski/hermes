@@ -18,12 +18,13 @@ type Memory = {
 interface Props {
   initialMemories: Memory[];
   agents: Agent[];
+  initialKey?: string;
 }
 
-export function MemoryManager({ initialMemories, agents }: Props) {
+export function MemoryManager({ initialMemories, agents, initialKey = "" }: Props) {
   const [memoryList, setMemoryList] = useState<Memory[]>(initialMemories);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ key: "", content: "", agentId: "" });
+  const [showForm, setShowForm] = useState(Boolean(initialKey));
+  const [form, setForm] = useState({ key: initialKey, content: "", agentId: "" });
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [error, setError] = useState("");

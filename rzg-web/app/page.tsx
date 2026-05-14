@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 import {
   ArrowRight,
   Bot,
   Brain,
   CheckCircle2,
   FileText,
+  Globe2,
   Megaphone,
   PenLine,
   Radio,
@@ -52,7 +54,23 @@ const engineCapabilities = [
   { icon: Workflow, title: "Future scheduling", text: "Hermes supports scheduled automations; RZG marks scheduling as coming soon where UI wiring is not complete." },
 ];
 
-export default function LandingPage() {
+const workflowPreview = [
+  { icon: Globe2, title: "Website Audit", text: "Fetch a URL, parse SEO structure, and produce prioritized conversion, trust, and accessibility fixes." },
+  { icon: Search, title: "Competitor Intelligence", text: "Compare 2-5 competitor URLs and extract positioning gaps, offer opportunities, and next actions." },
+  { icon: FileText, title: "Proposal Builder", text: "Turn client briefs plus business memory into client-ready scope, timeline, deliverables, and next steps." },
+];
+
+const pricingPlans = [
+  { name: "Free", price: "$0", cta: "Start Free", href: "/register", detail: "Limited missions, basic workers, and saved task history while you validate workflows." },
+  { name: "Pro", price: "Coming soon", cta: "Join Waitlist", href: "/register", detail: "More missions, business memory, exports, and premium operational workflows." },
+  { name: "Agency", price: "Coming soon", cta: "Join Waitlist", href: "/register", detail: "Team workflows, advanced automations, priority models, and client delivery systems." },
+];
+
+export default async function LandingPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const commandHref = user ? "/dashboard/command" : "/register";
+
   return (
     <main className="rzg-root overflow-hidden">
       <section className="relative min-h-screen border-b border-white/10">
@@ -76,11 +94,11 @@ export default function LandingPage() {
               <a href="#memory" className="hover:text-white">Memory</a>
             </div>
             <div className="flex items-center gap-2">
-              <Link href="/login" className="button-secondary hidden px-3 py-2 sm:inline-flex">
-                Sign in
+              <Link href={user ? "/dashboard/command" : "/login"} className="button-secondary hidden px-3 py-2 sm:inline-flex">
+                {user ? "Command Center" : "Sign in"}
               </Link>
-              <Link href="/register" className="button-primary px-3 py-2">
-                Launch <ArrowRight className="h-4 w-4" />
+              <Link href={commandHref} className="button-primary px-3 py-2">
+                {user ? "Open" : "Start Free"} <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           </div>
@@ -100,10 +118,15 @@ export default function LandingPage() {
               Assign missions, watch live execution, save results, and build persistent memory.
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <Link href="/dashboard/command" className="button-primary px-6 py-3">
-                Launch Command Center <ArrowRight className="h-4 w-4" />
+              <Link href={commandHref} className="button-primary px-6 py-3">
+                {user ? "Open Command Center" : "Start Free"} <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link href="/dashboard/agents/new" className="button-secondary px-6 py-3">
+              <a href="#workflows" className="button-secondary px-6 py-3">
+                See Workflows <Workflow className="h-4 w-4" />
+              </a>
+            </div>
+            <div className="mt-5">
+              <Link href={user ? "/dashboard/agents/new" : "/register"} className="inline-flex items-center gap-2 text-sm font-bold text-cyan-100 hover:text-white">
                 Create AI Worker <Bot className="h-4 w-4" />
               </Link>
             </div>
@@ -117,6 +140,29 @@ export default function LandingPage() {
           </div>
 
           <ProductMockup />
+        </div>
+      </section>
+
+      <section id="workflows" className="border-y border-white/10 bg-white/[0.02] px-5 py-24 sm:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-10 max-w-3xl">
+            <p className="eyebrow">Workflow Library</p>
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-5xl">
+              Real operational workflows, not one-off chat prompts.
+            </h2>
+            <p className="mt-5 text-base leading-7 text-slate-300">
+              RZG creates missions, runs workers, streams execution, saves outputs, and uses business memory for better proposals, audits, content, and strategy.
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {workflowPreview.map(({ icon: Icon, title, text }) => (
+              <div key={title} className="surface-card surface-card-hover p-6">
+                <div className="brand-mark mb-5 h-11 w-11"><Icon className="h-5 w-5" /></div>
+                <h3 className="text-lg font-bold text-white">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-300">{text}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -139,6 +185,56 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="border-y border-white/10 bg-white/[0.02] px-5 py-24 sm:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-10 max-w-3xl">
+            <p className="eyebrow">Why Not ChatGPT?</p>
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-5xl">
+              Chat answers questions. RZG runs business missions.
+            </h2>
+            <p className="mt-5 text-base leading-7 text-slate-300">
+              Your team needs repeatable workers, live execution logs, saved mission history, exportable outputs, and memory that compounds across client work.
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {[
+              ["Saved mission history", "Every command becomes a task with prompt, run logs, final output, and audit trail."],
+              ["Business memory", "Store brand voice, services, pricing, target clients, competitors, SOPs, and offer positioning."],
+              ["Operational pipelines", "Website audits, competitor intelligence, and proposals use preflight logic before generation."],
+            ].map(([title, text]) => (
+              <div key={title} className="metal-panel p-6">
+                <h3 className="font-bold text-white">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-300">{text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="px-5 py-24 sm:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-10 text-center">
+            <p className="eyebrow">Pricing</p>
+            <h2 className="mx-auto mt-3 max-w-3xl text-3xl font-black tracking-tight text-white sm:text-5xl">
+              Start with missions. Upgrade when your workflows scale.
+            </h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {pricingPlans.map((plan) => (
+              <div key={plan.name} className="surface-card p-6">
+                <p className="eyebrow">{plan.name}</p>
+                <p className="mt-4 text-3xl font-black text-white">{plan.price}</p>
+                <p className="mt-3 min-h-20 text-sm leading-6 text-slate-300">{plan.detail}</p>
+                <Link href={user ? "/dashboard/command" : plan.href} className={plan.name === "Free" ? "button-primary mt-6 w-full" : "button-secondary mt-6 w-full"}>
+                  {user ? "Open Command Center" : plan.cta}
+                </Link>
+              </div>
+            ))}
+          </div>
+          <p className="mt-5 text-center text-sm font-semibold text-slate-300">Billing is not enabled yet. Current workspace usage is tracked in the dashboard.</p>
         </div>
       </section>
 
@@ -226,11 +322,11 @@ export default function LandingPage() {
             Create workers, run missions, inspect execution, and preserve knowledge in one premium operations layer.
           </p>
           <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link href="/register" className="button-primary px-6 py-3">
-              Launch Command Center <ArrowRight className="h-4 w-4" />
+            <Link href={commandHref} className="button-primary px-6 py-3">
+              {user ? "Open Command Center" : "Start Free"} <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link href="/login" className="button-secondary px-6 py-3">
-              Sign in
+            <Link href={user ? "/dashboard" : "/login"} className="button-secondary px-6 py-3">
+              {user ? "Open Dashboard" : "Sign in"}
             </Link>
           </div>
         </div>

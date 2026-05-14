@@ -89,15 +89,16 @@ export default async function TaskDetailPage({ params, searchParams }: Params) {
       </div>
 
       <div className="mx-auto min-w-0 max-w-6xl space-y-5 p-4 sm:p-6 lg:p-8">
-        <div className="surface-card min-w-0 overflow-hidden">
-          <div className="flex items-center gap-2 border-b border-white/10 px-5 py-4">
+        <details className="surface-card min-w-0 overflow-hidden">
+          <summary className="flex cursor-pointer list-none items-center gap-2 border-b border-white/10 px-5 py-4">
             <FileText className="h-4 w-4 text-cyan-200" />
             <span className="eyebrow">Prompt Panel</span>
-          </div>
+            <span className="ml-auto text-xs font-semibold text-slate-300">Expand brief</span>
+          </summary>
           <div className="p-5">
             <p className="whitespace-pre-wrap break-words text-sm leading-7 text-slate-100">{task.prompt}</p>
           </div>
-        </div>
+        </details>
 
         <div className="flex items-center gap-2 px-1">
           <Terminal className="h-4 w-4 text-cyan-200" />
@@ -105,7 +106,7 @@ export default async function TaskDetailPage({ params, searchParams }: Params) {
         </div>
 
         <TaskRunner
-          task={{ id: task.id, name: task.name, status: task.status }}
+          task={{ id: task.id, name: task.name, status: task.status, prompt: task.prompt }}
           agent={agent ? { id: agent.id, name: agent.name } : null}
           initialRun={latestRun}
           initialLogs={logs}

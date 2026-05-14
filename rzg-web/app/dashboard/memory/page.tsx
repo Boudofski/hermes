@@ -18,7 +18,8 @@ const MEMORY_CATEGORIES = [
   "Offer Positioning",
 ];
 
-export default async function MemoryPage() {
+export default async function MemoryPage({ searchParams }: { searchParams: Promise<{ key?: string }> }) {
+  const { key } = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -90,6 +91,7 @@ export default async function MemoryPage() {
             createdAt: m.createdAt?.toISOString() ?? null,
           }))}
           agents={agentList}
+          initialKey={key}
         />
       </div>
     </div>

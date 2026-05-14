@@ -183,7 +183,7 @@ function capabilityList(worker: Worker | undefined, kind: WorkerKind): Array<{ l
   ].filter((capability) => capability.active || capability.label === "Memory");
 }
 
-export function CommandCenterForm({ workers }: { workers: Worker[] }) {
+export function CommandCenterForm({ workers, memoryCount }: { workers: Worker[]; memoryCount: number }) {
   const router = useRouter();
   const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
   const [outputType, setOutputType] = useState(OUTPUT_TYPES[0]);
@@ -267,6 +267,21 @@ export function CommandCenterForm({ workers }: { workers: Worker[] }) {
         </div>
 
         <div className="space-y-5 p-5">
+          {memoryCount === 0 && (
+            <div className="rounded-2xl border border-cyan-300/25 bg-cyan-300/[0.07] p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="text-sm font-black text-white">Add business memory to get personalized outputs.</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-300">Brand voice, services, pricing, target clients, competitors, offer positioning, and SOPs make missions more specific.</p>
+                </div>
+                <Link href="/dashboard/memory" className="button-secondary shrink-0 px-3 py-2 text-xs">
+                  <Brain className="h-4 w-4" />
+                  Set up Memory
+                </Link>
+              </div>
+            </div>
+          )}
+
           <div>
             <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
               <div>
