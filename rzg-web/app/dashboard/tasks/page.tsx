@@ -41,8 +41,8 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
     <div className="min-h-screen min-w-0 max-w-full pb-28 md:pb-0">
       <PageTitle
         eyebrow="Mission Control"
-        title="Tasks"
-        description={`${taskList.length} mission${taskList.length !== 1 ? "s" : ""} assigned to AI workers. Create, inspect, and run executions from here.`}
+        title="Task History"
+        description={`${taskList.length} mission${taskList.length !== 1 ? "s" : ""} saved from worker executions. Inspect previous commands, runs, and outputs from here.`}
         action={<NewTaskButton agents={agentList} defaultAgentId={preselectedAgentId} />}
       />
 

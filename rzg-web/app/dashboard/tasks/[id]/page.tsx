@@ -8,15 +8,19 @@ import Link from "next/link";
 import { TaskRunner } from "@/components/tasks/task-runner";
 import { TaskActions } from "@/components/tasks/task-actions";
 
-type Params = { params: Promise<{ id: string }> };
+type Params = {
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<{ autorun?: string }>;
+};
 
 export async function generateMetadata({ params }: Params) {
   const { id } = await params;
   return { title: `Task — RZG AI` };
 }
 
-export default async function TaskDetailPage({ params }: Params) {
+export default async function TaskDetailPage({ params, searchParams }: Params) {
   const { id } = await params;
+  const { autorun } = (await searchParams) ?? {};
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -105,6 +109,7 @@ export default async function TaskDetailPage({ params }: Params) {
           agent={agent ? { id: agent.id, name: agent.name } : null}
           initialRun={latestRun}
           initialLogs={logs}
+          autorun={autorun === "1"}
           runHistory={recentRuns.slice(1).map((r) => ({
             id: r.id,
             status: r.status,

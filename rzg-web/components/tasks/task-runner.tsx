@@ -41,6 +41,7 @@ interface Props {
   initialRun: Run;
   initialLogs: LogEvent[];
   runHistory?: HistoryRun[];
+  autorun?: boolean;
 }
 
 function appendLog(prev: ConsoleLog[], next: ConsoleLog): ConsoleLog[] {
@@ -60,7 +61,7 @@ function normalizeLogs(logs: ConsoleLog[]): ConsoleLog[] {
   return logs.reduce<ConsoleLog[]>((acc, log) => appendLog(acc, log), []);
 }
 
-export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = [] }: Props) {
+export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = [], autorun = false }: Props) {
   const [running, setRunning] = useState(false);
   const [logs, setLogs] = useState<ConsoleLog[]>(
     normalizeLogs(initialLogs.map((l) => ({ type: l.eventType, content: l.content, toolName: l.toolName })))
@@ -70,10 +71,19 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
   const [runStatus, setRunStatus] = useState(initialRun?.status ?? "idle");
   const logsEndRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const autorunStartedRef = useRef(false);
 
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [logs]);
+
+  useEffect(() => {
+    if (!autorun || autorunStartedRef.current || !agent) return;
+    if (initialRun?.status === "running") return;
+    autorunStartedRef.current = true;
+    void handleRun();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autorun, agent?.id, initialRun?.status]);
 
   // ── SSE execution — DO NOT MODIFY FETCH/STREAM/ABORT LOGIC ──
   async function handleRun() {

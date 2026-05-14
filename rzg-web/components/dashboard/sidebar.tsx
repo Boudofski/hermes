@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowRight, Bot, Brain, LayoutDashboard, ListTodo, LogOut, Plus, Radio, Users } from "lucide-react";
+import { ArrowRight, Bot, Brain, LayoutDashboard, ListTodo, LogOut, Plus, Radio, Terminal, Users } from "lucide-react";
 
 const NAV = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
+  { href: "/dashboard/command", label: "Command", icon: Terminal, exact: false },
   { href: "/dashboard/agents", label: "AI Workers", icon: Users, exact: false },
   { href: "/dashboard/tasks", label: "Tasks", icon: ListTodo, exact: false },
   { href: "/dashboard/memory", label: "Memory", icon: Brain, exact: false },
@@ -87,7 +88,7 @@ export function Sidebar({
             {recentTasks.length === 0 ? (
               <div className="rounded-xl border border-white/10 bg-white/[0.025] px-3 py-3">
                 <p className="text-xs font-semibold leading-5 text-slate-300">No tasks yet.</p>
-                <Link href="/dashboard/tasks" className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-cyan-100">
+                <Link href="/dashboard/command" className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-cyan-100">
                   Run first mission <ArrowRight className="h-3 w-3" />
                 </Link>
               </div>
@@ -129,7 +130,7 @@ export function Sidebar({
       </div>
     </aside>
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#030712]/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl md:hidden">
-      <nav className="grid grid-cols-4 gap-1">
+      <nav className="grid grid-cols-5 gap-1">
         {NAV.map(({ href, label, icon: Icon, exact }) => {
           const active = isActive(href, exact);
           return (

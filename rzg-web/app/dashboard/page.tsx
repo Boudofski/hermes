@@ -60,7 +60,7 @@ export default async function DashboardPage() {
         description={`${workspace.name} workspace. Your operational home for workers, missions, memory, and execution results.`}
         action={
           <div className="flex flex-wrap gap-2">
-            <CommandButton href="/dashboard/tasks">
+            <CommandButton href="/dashboard/command">
               <Zap className="h-4 w-4" />
               Execute Mission
             </CommandButton>
@@ -119,7 +119,7 @@ export default async function DashboardPage() {
                     agentCount.count === 0 ? (
                       <CommandButton href="/dashboard/agents/new"><Plus className="h-4 w-4" /> Create your first worker</CommandButton>
                     ) : (
-                      <CommandButton href="/dashboard/tasks"><Zap className="h-4 w-4" /> Run a task</CommandButton>
+                      <CommandButton href="/dashboard/command"><Zap className="h-4 w-4" /> Run a task</CommandButton>
                     )
                   }
                 />
@@ -206,7 +206,7 @@ export default async function DashboardPage() {
             <div className="mt-4 space-y-3">
               {!hasMemories && <QuickLaunch href="/dashboard/memory" icon={<Brain className="h-5 w-5" />} title="Add business memory" detail="Store services, pricing, brand voice, SOPs, and positioning." />}
               {!hasWorkers && <QuickLaunch href="/dashboard/agents/new" icon={<Bot className="h-5 w-5" />} title="Create Proposal Builder Worker" detail="Start with a worker that turns briefs into client-ready proposals." />}
-              {!hasTasks && <QuickLaunch href="/dashboard/tasks" icon={<Zap className="h-5 w-5" />} title="Run first mission" detail="Assign a prompt to a worker and watch the execution stream." />}
+              {!hasTasks && <QuickLaunch href="/dashboard/command" icon={<Zap className="h-5 w-5" />} title="Run first mission" detail="Command a worker and watch the execution stream." />}
               <QuickLaunch href="/dashboard/agents/new" icon={<Globe2 className="h-5 w-5" />} title="Run Website Audit" detail="Create or select the audit worker and submit a public URL." />
               <QuickLaunch href="/dashboard/agents/new" icon={<Target className="h-5 w-5" />} title="Compare competitors" detail="Use Competitor Intelligence with 2-5 competitor URLs." />
             </div>
