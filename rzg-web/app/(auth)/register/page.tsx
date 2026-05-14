@@ -27,7 +27,7 @@ export default function RegisterPage() {
         options: { data: { full_name: name } },
       });
       if (authError) throw authError;
-      router.push("/dashboard");
+      router.push("/dashboard/command");
       router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");

@@ -32,7 +32,7 @@ export default async function DashboardLayout({
         .innerJoin(agents, eq(tasks.agentId, agents.id))
         .where(eq(tasks.workspaceId, workspace.id))
         .orderBy(desc(tasks.lastRunAt), desc(tasks.updatedAt))
-        .limit(7)
+        .limit(5)
     : [];
   const recentTasks = recentTaskRows.map(({ id, name, status, agentName }) => ({ id, name, status, agentName }));
 

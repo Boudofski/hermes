@@ -100,7 +100,7 @@ export default function LandingPage() {
               Assign missions, watch live execution, save results, and build persistent memory.
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <Link href="/dashboard" className="button-primary px-6 py-3">
+              <Link href="/dashboard/command" className="button-primary px-6 py-3">
                 Launch Command Center <ArrowRight className="h-4 w-4" />
               </Link>
               <Link href="/dashboard/agents/new" className="button-secondary px-6 py-3">

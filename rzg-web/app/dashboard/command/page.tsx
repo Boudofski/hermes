@@ -30,7 +30,7 @@ export default async function CommandPage() {
       <PageTitle
         eyebrow="Command Center"
         title="Execute a Mission"
-        description="Select an AI worker, choose the output format, and launch a real task execution. Completed commands are saved in Tasks as history."
+        description="Pick a specialized AI worker, describe the outcome, and RZG will create, run, and save the mission automatically."
         action={
           <div className="hidden items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-xs font-bold text-cyan-100 sm:flex">
             <Terminal className="h-4 w-4" />

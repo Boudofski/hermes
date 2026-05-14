@@ -77,19 +77,19 @@ export function Sidebar({
           })}
         </nav>
 
-        <section className="mt-4 flex min-h-0 flex-1 flex-col border-t border-white/10 pt-3">
+        <section className="mt-3 flex min-h-0 flex-1 flex-col border-t border-white/10 pt-3">
           <div className="mb-2 flex items-center justify-between gap-2 px-1">
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-300">Recent Tasks</p>
             <Link href="/dashboard/tasks" className="inline-flex items-center gap-1 text-[11px] font-bold text-cyan-100 hover:text-white">
               View all <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
-          <div className="min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
+          <div className="min-h-0 max-h-64 flex-1 space-y-1 overflow-y-auto pr-1">
             {recentTasks.length === 0 ? (
-              <div className="rounded-xl border border-white/10 bg-white/[0.025] px-3 py-3">
-                <p className="text-xs font-semibold leading-5 text-slate-300">No tasks yet.</p>
+              <div className="rounded-xl border border-white/10 bg-white/[0.025] px-2.5 py-2">
+                <p className="text-xs font-semibold leading-5 text-slate-300">No missions yet</p>
                 <Link href="/dashboard/command" className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-cyan-100">
-                  Run first mission <ArrowRight className="h-3 w-3" />
+                  Open Command <ArrowRight className="h-3 w-3" />
                 </Link>
               </div>
             ) : (
@@ -99,16 +99,16 @@ export function Sidebar({
                   <Link
                     key={task.id}
                     href={`/dashboard/tasks/${task.id}`}
-                    className={`group flex min-w-0 items-start gap-2 rounded-xl border px-2.5 py-2 transition ${
+                    className={`group flex min-w-0 items-start gap-2 rounded-lg border px-2 py-1.5 transition ${
                       active
-                        ? "border-cyan-300/35 bg-cyan-300/10"
+                        ? "border-cyan-300/30 bg-cyan-300/[0.075]"
                         : "border-transparent bg-white/[0.018] hover:border-white/10 hover:bg-white/[0.045]"
                     }`}
                   >
                     <StatusDot status={task.status} />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-xs font-bold text-white group-hover:text-cyan-100">{task.name}</span>
-                      <span className="mt-0.5 block truncate text-[11px] font-medium text-slate-400">{task.agentName}</span>
+                      <span className="block truncate text-[11px] font-bold text-white group-hover:text-cyan-100">{task.name}</span>
+                      <span className="mt-0.5 block truncate text-[10px] font-medium text-slate-400">{task.agentName}</span>
                     </span>
                   </Link>
                 );

@@ -22,7 +22,7 @@ export default function LoginPage() {
       const supabase = createClient();
       const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
       if (authError) throw authError;
-      router.push("/dashboard");
+      router.push("/dashboard/command");
       router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Sign in failed");
