@@ -1,12 +1,48 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { tasks, taskRuns, taskLogs, agents } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { tasks, taskRuns, taskLogs, agents, memories } from "@/lib/db/schema";
+import { eq, and, or, isNull, desc } from "drizzle-orm";
 import { RunTaskSchema } from "@/lib/validations";
 import { getAuthenticatedWorkspace, errorResponse } from "@/lib/api-helpers";
 import { streamExecution } from "@/lib/hermes-client";
 
 type Params = { params: Promise<{ id: string }> };
+
+const MAX_MEMORY_ENTRIES = 20;
+const MAX_MEMORY_CONTENT_CHARS = 1200;
+const MAX_MEMORY_BLOCK_CHARS = 12000;
+
+type MemoryEntry = {
+  key: string;
+  content: string;
+  agentId: string | null;
+};
+
+function truncateMemoryContent(content: string): string {
+  if (content.length <= MAX_MEMORY_CONTENT_CHARS) return content;
+  return `${content.slice(0, MAX_MEMORY_CONTENT_CHARS).trimEnd()}...`;
+}
+
+function buildMemoryContextBlock(entries: MemoryEntry[], agentId: string): string {
+  if (entries.length === 0) return "";
+
+  const lines = ["## Business Memory Context"];
+  for (const entry of entries) {
+    const scope = entry.agentId === agentId ? "Worker-specific" : "Global";
+    lines.push(`\n- Key: ${entry.key}`);
+    lines.push(`  Scope: ${scope}`);
+    lines.push(`  Value: ${truncateMemoryContent(entry.content)}`);
+  }
+
+  const block = lines.join("\n");
+  if (block.length <= MAX_MEMORY_BLOCK_CHARS) return block;
+  return `${block.slice(0, MAX_MEMORY_BLOCK_CHARS).trimEnd()}\n\n[Memory context truncated for execution budget.]`;
+}
+
+function buildExecutionPrompt(memoryBlock: string, prompt: string): string {
+  if (!memoryBlock) return prompt;
+  return `${memoryBlock}\n\n## Worker Task\n${prompt}`;
+}
 
 export async function POST(req: NextRequest, { params }: Params) {
   const { id } = await params;
@@ -31,6 +67,36 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const prompt = parsed.data.overridePrompt || task.prompt;
 
+  let memoryContext = "";
+  let memoryCount = 0;
+
+  // Memory is only injected for workers that explicitly opt into memory.
+  // This keeps non-memory workers deterministic and avoids silently expanding
+  // prompts for tasks where the user disabled persistent context.
+  if (agent.memoryEnabled) {
+    const memoryEntries = await db
+      .select({
+        key: memories.key,
+        content: memories.content,
+        agentId: memories.agentId,
+        updatedAt: memories.updatedAt,
+      })
+      .from(memories)
+      .where(
+        and(
+          eq(memories.workspaceId, auth.workspace.id),
+          or(isNull(memories.agentId), eq(memories.agentId, agent.id))
+        )
+      )
+      .orderBy(desc(memories.updatedAt))
+      .limit(MAX_MEMORY_ENTRIES);
+
+    memoryCount = memoryEntries.length;
+    memoryContext = buildMemoryContextBlock(memoryEntries, agent.id);
+  }
+
+  const executionPrompt = buildExecutionPrompt(memoryContext, prompt);
+
   // Create task run record
   const [run] = await db
     .insert(taskRuns)
@@ -54,7 +120,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       try {
         const adapterRes = await streamExecution({
           task_run_id: run.id,
-          message: prompt,
+          message: executionPrompt,
           agent_config: {
             name: agent.name,
             role: agent.role,
@@ -70,6 +136,15 @@ export async function POST(req: NextRequest, { params }: Params) {
         });
 
         if (!adapterRes.body) throw new Error("No response body from adapter");
+
+        if (memoryCount > 0) {
+          await db.insert(taskLogs).values({
+            taskRunId: run.id,
+            eventType: "memory_loaded",
+            content: `Loaded ${memoryCount} memory ${memoryCount === 1 ? "entry" : "entries"} for this run.`,
+            metadata: { count: memoryCount },
+          });
+        }
 
         const reader = adapterRes.body.getReader();
         const decoder = new TextDecoder();
