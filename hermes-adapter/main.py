@@ -6,6 +6,7 @@ Environment variables:
   MOCK_MODE         Set to "true" to return mock responses (dev/testing)
   DEFAULT_API_KEY   Fallback LLM API key if request doesn't supply one
   DEFAULT_BASE_URL  Fallback provider base URL
+  DEFAULT_MAX_TOKENS Fallback output cap for each model response
   PORT              Port to listen on (default 8001)
 """
 

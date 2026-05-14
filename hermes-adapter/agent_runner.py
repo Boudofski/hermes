@@ -21,6 +21,7 @@ from models import AgentConfig, LogEvent
 logger = logging.getLogger(__name__)
 
 MOCK_MODE = os.getenv("MOCK_MODE", "false").lower() in ("true", "1", "yes")
+DEFAULT_MAX_TOKENS = 3000
 
 # Add hermes root to sys.path so run_agent.py is importable.
 _HERMES_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -41,6 +42,22 @@ if not MOCK_MODE:
             "Task runs will fail until resolved.",
             _err,
         )
+
+
+def _default_max_tokens() -> int:
+    raw = os.getenv("DEFAULT_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)).strip()
+    try:
+        value = int(raw)
+        if value <= 0:
+            raise ValueError
+        return value
+    except ValueError:
+        logger.warning(
+            "Invalid DEFAULT_MAX_TOKENS=%r; falling back to %s",
+            raw,
+            DEFAULT_MAX_TOKENS,
+        )
+        return DEFAULT_MAX_TOKENS
 
 
 def _build_system_prompt(config: AgentConfig) -> str:
@@ -119,6 +136,7 @@ def _run_real_agent(
             api_key=api_key or os.getenv("DEFAULT_API_KEY", ""),
             base_url=base_url or os.getenv("DEFAULT_BASE_URL", "https://openrouter.ai/api/v1"),
             model=model,
+            max_tokens=_default_max_tokens(),
             max_iterations=max_iterations,
             enabled_toolsets=enabled if enabled else None,
             disabled_toolsets=disabled if disabled else None,
