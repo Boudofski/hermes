@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Bot, Brain, LayoutDashboard, ListTodo, LogOut, Radio, Users } from "lucide-react";
+import { ArrowRight, Bot, Brain, LayoutDashboard, ListTodo, LogOut, Plus, Radio, Users } from "lucide-react";
 
 const NAV = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
@@ -12,7 +12,20 @@ const NAV = [
   { href: "/dashboard/memory", label: "Memory", icon: Brain, exact: false },
 ];
 
-export function Sidebar() {
+type SidebarTask = {
+  id: string;
+  name: string;
+  status: string;
+  agentName: string;
+};
+
+export function Sidebar({
+  workspaceName,
+  recentTasks = [],
+}: {
+  workspaceName: string;
+  recentTasks?: SidebarTask[];
+}) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -29,45 +42,87 @@ export function Sidebar() {
 
   return (
     <>
-    <aside className="sticky top-0 z-30 hidden h-screen w-64 shrink-0 flex-col border-r border-white/10 bg-[#030712]/90 p-4 backdrop-blur-xl xl:w-72 md:flex">
-      <Link href="/dashboard" className="mb-6 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-        <div className="brand-mark h-11 w-11">
+    <aside className="fixed inset-y-0 left-0 z-30 hidden h-screen w-64 shrink-0 flex-col border-r border-white/10 bg-[#030712]/92 p-3 backdrop-blur-xl xl:w-72 md:flex">
+      <Link href="/dashboard" className="mb-3 flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2.5 transition hover:border-cyan-300/25 hover:bg-cyan-300/[0.07]">
+        <div className="brand-mark h-9 w-9">
           <Bot className="h-5 w-5" />
         </div>
         <div className="min-w-0">
-          <p className="font-black tracking-wide text-white">RZG AI</p>
-          <p className="truncate text-[11px] font-bold uppercase tracking-[0.18em] text-cyan-200">Command Center</p>
+          <p className="text-sm font-black tracking-wide text-white">RZG AI</p>
+          <p className="truncate text-[10px] font-bold uppercase tracking-[0.16em] text-cyan-200">Command Center</p>
         </div>
       </Link>
 
-      <div className="mb-4 rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.045] p-4">
-        <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-cyan-100">
-          <Radio className="h-3.5 w-3.5" />
+      <div className="mb-3 rounded-xl border border-cyan-300/20 bg-cyan-300/[0.04] px-3 py-2.5">
+        <div className="mb-1.5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-100">
+          <Radio className="h-3 w-3" />
           Workspace
         </div>
-        <p className="text-sm font-bold text-white">AI Operations</p>
-        <p className="mt-1 text-xs leading-5 text-slate-300">Workers, tasks, memory, and execution streams.</p>
+        <p className="truncate text-sm font-bold text-white">{workspaceName}</p>
+        <p className="mt-0.5 truncate text-[11px] font-medium text-slate-300">Workers, tasks, memory.</p>
       </div>
 
-      <nav className="flex-1 space-y-1">
-        {NAV.map(({ href, label, icon: Icon, exact }) => {
-          const active = isActive(href, exact);
-          return (
-            <Link key={href} href={href} className={`nav-item ${active ? "active" : ""}`}>
-              <Icon className="h-4 w-4 shrink-0" />
-              <span>{label}</span>
-              {active && <span className="ml-auto h-2 w-2 rounded-full bg-cyan-200 shadow-[0_0_16px_rgba(103,232,249,0.8)]" />}
-            </Link>
-          );
-        })}
-      </nav>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <nav className="space-y-1">
+          {NAV.map(({ href, label, icon: Icon, exact }) => {
+            const active = isActive(href, exact);
+            return (
+              <Link key={href} href={href} className={`nav-item min-h-10 ${active ? "active" : ""}`}>
+                <Icon className="h-4 w-4 shrink-0" />
+                <span>{label}</span>
+                {active && <span className="ml-auto h-2 w-2 rounded-full bg-cyan-200 shadow-[0_0_16px_rgba(103,232,249,0.8)]" />}
+              </Link>
+            );
+          })}
+        </nav>
 
-      <div className="border-t border-white/10 pt-4">
-        <Link href="/dashboard/agents/new" className="button-primary mb-3 w-full">
-          <Bot className="h-4 w-4" />
+        <section className="mt-4 flex min-h-0 flex-1 flex-col border-t border-white/10 pt-3">
+          <div className="mb-2 flex items-center justify-between gap-2 px-1">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-300">Recent Tasks</p>
+            <Link href="/dashboard/tasks" className="inline-flex items-center gap-1 text-[11px] font-bold text-cyan-100 hover:text-white">
+              View all <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+          <div className="min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
+            {recentTasks.length === 0 ? (
+              <div className="rounded-xl border border-white/10 bg-white/[0.025] px-3 py-3">
+                <p className="text-xs font-semibold leading-5 text-slate-300">No tasks yet.</p>
+                <Link href="/dashboard/tasks" className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-cyan-100">
+                  Run first mission <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+            ) : (
+              recentTasks.map((task) => {
+                const active = pathname === `/dashboard/tasks/${task.id}`;
+                return (
+                  <Link
+                    key={task.id}
+                    href={`/dashboard/tasks/${task.id}`}
+                    className={`group flex min-w-0 items-start gap-2 rounded-xl border px-2.5 py-2 transition ${
+                      active
+                        ? "border-cyan-300/35 bg-cyan-300/10"
+                        : "border-transparent bg-white/[0.018] hover:border-white/10 hover:bg-white/[0.045]"
+                    }`}
+                  >
+                    <StatusDot status={task.status} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-xs font-bold text-white group-hover:text-cyan-100">{task.name}</span>
+                      <span className="mt-0.5 block truncate text-[11px] font-medium text-slate-400">{task.agentName}</span>
+                    </span>
+                  </Link>
+                );
+              })
+            )}
+          </div>
+        </section>
+      </div>
+
+      <div className="shrink-0 border-t border-white/10 pt-3">
+        <Link href="/dashboard/agents/new" className="button-primary mb-2 w-full justify-center px-3 py-2.5 text-sm">
+          <Plus className="h-4 w-4" />
           Create Worker
         </Link>
-        <button type="button" onClick={signOut} className="button-secondary w-full justify-start">
+        <button type="button" onClick={signOut} className="button-secondary w-full justify-center px-3 py-2.5 text-sm">
           <LogOut className="h-4 w-4" />
           Sign out
         </button>
@@ -88,4 +143,15 @@ export function Sidebar() {
     </div>
     </>
   );
+}
+
+function StatusDot({ status }: { status: string }) {
+  const colors: Record<string, string> = {
+    completed: "bg-emerald-300",
+    running: "bg-amber-300 animate-pulse-dot",
+    failed: "bg-red-300",
+    cancelled: "bg-slate-500",
+    pending: "bg-slate-500",
+  };
+  return <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${colors[status] ?? colors.pending}`} />;
 }
