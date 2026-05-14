@@ -158,9 +158,19 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
   const isCancelled = runStatus === "cancelled";
   const hasResult = !!finalResponse || !!error;
   const toolEvents = logs.filter((l) => l.type === "tool_start" || l.type === "tool_end");
+  const hasTextOutput = logs.some((l) => l.type === "text_delta");
 
   return (
     <div className="min-w-0 max-w-full space-y-4 overflow-hidden">
+      <ExecutionStages
+        running={running}
+        hasLogs={logs.length > 0}
+        hasTools={toolEvents.length > 0}
+        hasTextOutput={hasTextOutput}
+        hasResult={hasResult}
+        failed={isFailed}
+      />
+
       {/* ── Execution console header ── */}
       <div className="console-shell min-w-0">
         {/* Console title bar */}
@@ -302,6 +312,55 @@ export function TaskRunner({ task, agent, initialRun, initialLogs, runHistory = 
       {runHistory.length > 0 && (
         <RunHistory runs={runHistory} />
       )}
+    </div>
+  );
+}
+
+function ExecutionStages({
+  running,
+  hasLogs,
+  hasTools,
+  hasTextOutput,
+  hasResult,
+  failed,
+}: {
+  running: boolean;
+  hasLogs: boolean;
+  hasTools: boolean;
+  hasTextOutput: boolean;
+  hasResult: boolean;
+  failed: boolean;
+}) {
+  const stages = [
+    { label: "Reading task", done: hasLogs || hasResult, active: running && !hasLogs },
+    { label: "Loading memory", done: hasLogs || hasResult, active: running && hasLogs && !hasTextOutput && !hasTools },
+    { label: "Planning", done: hasTextOutput || hasTools || hasResult, active: running && hasLogs && !hasTextOutput && !hasTools },
+    { label: "Executing tools", done: hasTools && !running, active: running && hasTools, note: "Tool-capable when worker/toolsets are configured" },
+    { label: "Formatting output", done: hasResult, active: running && hasTextOutput },
+    { label: "Saving result", done: hasResult && !failed, active: running && hasTextOutput && !hasResult },
+  ];
+
+  return (
+    <div className="surface-card p-4">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <p className="eyebrow">Execution Stages</p>
+        <span className="text-xs font-semibold text-slate-300">Live stage view</span>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
+        {stages.map((stage) => (
+          <div key={stage.label} className={`rounded-xl border px-3 py-3 ${stage.active ? "border-cyan-300/40 bg-cyan-300/10" : stage.done ? "border-emerald-300/25 bg-emerald-400/10" : "border-white/10 bg-white/[0.025]"}`}>
+            <div className="flex items-center gap-2">
+              {stage.done ? (
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-200" />
+              ) : (
+                <Clock className={`h-4 w-4 shrink-0 ${stage.active ? "animate-spin text-cyan-200" : "text-slate-400"}`} />
+              )}
+              <p className="truncate text-xs font-bold text-white">{stage.label}</p>
+            </div>
+            {stage.note && <p className="mt-2 line-clamp-2 text-[11px] leading-4 text-slate-300">{stage.note}</p>}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

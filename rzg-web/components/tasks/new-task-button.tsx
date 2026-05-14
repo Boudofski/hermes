@@ -6,6 +6,16 @@ import { Plus, X, Zap } from "lucide-react";
 
 type Agent = { id: string; name: string; role: string };
 
+const OUTPUT_TYPES = [
+  "Report",
+  "Checklist",
+  "Strategy",
+  "Table",
+  "Email",
+  "Social Content",
+  "Automation Plan",
+];
+
 export function NewTaskButton({ agents, defaultAgentId }: { agents: Agent[]; defaultAgentId?: string }) {
   const validDefault = defaultAgentId && agents.some((a) => a.id === defaultAgentId);
   const [open, setOpen] = useState(!!validDefault);
@@ -14,7 +24,7 @@ export function NewTaskButton({ agents, defaultAgentId }: { agents: Agent[]; def
   const router = useRouter();
 
   const initialAgentId = validDefault ? defaultAgentId : agents[0]?.id ?? "";
-  const [form, setForm] = useState({ agentId: initialAgentId, name: "", prompt: "" });
+  const [form, setForm] = useState({ agentId: initialAgentId, name: "", prompt: "", outputType: "Report" });
 
   function set(key: string, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -28,7 +38,11 @@ export function NewTaskButton({ agents, defaultAgentId }: { agents: Agent[]; def
       const res = await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          agentId: form.agentId,
+          name: form.name,
+          prompt: `Output type: ${form.outputType}\n\n${form.prompt}`,
+        }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -82,6 +96,14 @@ export function NewTaskButton({ agents, defaultAgentId }: { agents: Agent[]; def
               <div className="space-y-2">
                 <label className="label-premium">Task Name</label>
                 <input type="text" value={form.name} onChange={(e) => set("name", e.target.value)} required placeholder="Q2 competitor analysis" className="input-premium" />
+              </div>
+
+              <div className="space-y-2">
+                <label className="label-premium">Output Type</label>
+                <select value={form.outputType} onChange={(e) => set("outputType", e.target.value)} className="input-premium">
+                  {OUTPUT_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
+                </select>
+                <p className="helper-text">RZG adds this as an output-format instruction to the task prompt.</p>
               </div>
 
               <div className="space-y-2">

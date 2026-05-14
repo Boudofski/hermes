@@ -8,6 +8,16 @@ import { PageTitle } from "@/components/ui/page-title";
 
 export const metadata = { title: "Memory — RZG AI" };
 
+const MEMORY_CATEGORIES = [
+  "Brand Voice",
+  "Services",
+  "Pricing",
+  "Target Clients",
+  "Competitors",
+  "SOPs",
+  "Offer Positioning",
+];
+
 export default async function MemoryPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -58,6 +68,19 @@ export default async function MemoryPage() {
             <LockKeyhole className="mb-4 h-7 w-7 text-cyan-200" />
             <p className="font-bold text-white">Operational context</p>
             <p className="mt-2 text-sm leading-6 text-slate-300">Use memory for preferences, brand voice, project facts, constraints, and reusable instructions.</p>
+          </div>
+          <div className="surface-card p-5">
+            <p className="eyebrow">Suggested Categories</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {MEMORY_CATEGORIES.map((category) => (
+                <span key={category} className="badge badge-cyan">
+                  {category}
+                </span>
+              ))}
+            </div>
+            <p className="mt-4 text-sm leading-6 text-slate-300">
+              Add these as global memories or attach them to a specialist worker when the context should be role-specific.
+            </p>
           </div>
         </aside>
 

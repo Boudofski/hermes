@@ -10,13 +10,16 @@ import {
   ChevronDown,
   ChevronUp,
   ClipboardList,
+  MailPlus,
   Megaphone,
   Microscope,
   PenLine,
+  Search,
   Settings2,
   Smartphone,
   Target,
   TrendingUp,
+  UsersRound,
   type LucideIcon,
 } from "lucide-react";
 import { AGENT_TEMPLATES, type AgentTemplate } from "@/lib/agent-templates";
@@ -24,12 +27,15 @@ import { AGENT_TEMPLATES, type AgentTemplate } from "@/lib/agent-templates";
 const ICON_MAP: Record<string, LucideIcon> = {
   Microscope,
   PenLine,
+  Search,
   TrendingUp,
   Target,
   Megaphone,
+  MailPlus,
   Smartphone,
   ClipboardList,
   Settings2,
+  UsersRound,
 };
 
 const MODELS = [

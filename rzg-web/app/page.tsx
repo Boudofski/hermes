@@ -8,6 +8,7 @@ import {
   Megaphone,
   PenLine,
   Radio,
+  Repeat2,
   Search,
   Settings2,
   ShieldCheck,
@@ -15,6 +16,7 @@ import {
   Target,
   Terminal,
   TrendingUp,
+  Wrench,
   Workflow,
   Zap,
 } from "lucide-react";
@@ -40,6 +42,14 @@ const differences = [
   { icon: Radio, title: "Transparent execution", text: "RZG AI shows the work, not just the answer: logs, tool calls, state, and output." },
   { icon: Brain, title: "Persistent memory", text: "Workers can retain business context across tasks through a dedicated memory vault." },
   { icon: ShieldCheck, title: "Business-grade structure", text: "Workers, tasks, results, and audit trails are organized for repeatable operations." },
+];
+
+const engineCapabilities = [
+  { icon: Brain, title: "Persistent memory", text: "Workers can reuse brand voice, customer context, offers, SOPs, and prior knowledge across tasks." },
+  { icon: Terminal, title: "Live execution logs", text: "RZG shows execution as it happens, including streaming output and operational events." },
+  { icon: Wrench, title: "Tool-capable workers", text: "Hermes is built for agents that can use tools. RZG exposes this as worker capability, not a chat prompt." },
+  { icon: Repeat2, title: "Repeatable workflows", text: "Workers, tasks, outputs, and memory make business processes reusable instead of one-off chats." },
+  { icon: Workflow, title: "Future scheduling", text: "Hermes supports scheduled automations; RZG marks scheduling as coming soon where UI wiring is not complete." },
 ];
 
 export default function LandingPage() {
@@ -126,6 +136,32 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-lg font-bold text-white">{title}</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-300">{description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y border-white/10 bg-white/[0.02] px-5 py-24 sm:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-10 max-w-3xl">
+            <p className="eyebrow">Hermes Agent Engine</p>
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-5xl">
+              Powered by an agent engine, not a chat box.
+            </h2>
+            <p className="mt-5 text-base leading-7 text-slate-300">
+              RZG AI is a business layer on top of Hermes: persistent memory, live execution, tool-capable workers,
+              repeatable workflows, and scheduling paths that can become durable automations.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            {engineCapabilities.map(({ icon: Icon, title, text }) => (
+              <div key={title} className="surface-card p-5">
+                <div className="brand-mark mb-4 h-10 w-10">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="font-bold text-white">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-300">{text}</p>
               </div>
             ))}
           </div>

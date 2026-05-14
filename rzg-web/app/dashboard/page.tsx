@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { agents, memories, tasks, taskRuns, workspaces } from "@/lib/db/schema";
 import { eq, count, desc } from "drizzle-orm";
 import Link from "next/link";
-import { Activity, ArrowRight, Bot, Brain, CheckCircle2, ListTodo, Plus, Radio, Zap } from "lucide-react";
+import { Activity, ArrowRight, Bot, Brain, CheckCircle2, Clock3, ListTodo, Plus, Radio, Wrench, Zap } from "lucide-react";
 import { CommandButton } from "@/components/ui/command-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { MetricCard } from "@/components/ui/metric-card";
@@ -114,6 +114,23 @@ export default async function DashboardPage() {
               </div>
             )}
           </div>
+
+          <section className="surface-panel p-5 sm:p-6">
+            <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="eyebrow">Hermes Engine</p>
+                <h2 className="mt-1 text-xl font-bold text-white">Real agent capabilities under the hood</h2>
+              </div>
+              <span className="badge badge-blue self-start sm:self-auto">Powered by Hermes</span>
+            </div>
+            <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+              <EngineCard icon={<Radio className="h-5 w-5" />} title="Live execution" detail="Streaming task runs and logs." status="Active" />
+              <EngineCard icon={<Wrench className="h-5 w-5" />} title="Tool-ready workers" detail="Hermes supports tool-capable agents." status="Engine-ready" />
+              <EngineCard icon={<Brain className="h-5 w-5" />} title="Persistent memory" detail="Saved context for workers." status="Active" />
+              <EngineCard icon={<Clock3 className="h-5 w-5" />} title="Scheduled workflows" detail="Repeatable automations are planned for RZG." status="Coming soon" muted />
+              <EngineCard icon={<Bot className="h-5 w-5" />} title="Multi-model support" detail="Workers store model profiles." status="Engine-ready" />
+            </div>
+          </section>
         </section>
 
         <aside className="min-w-0 space-y-6">
@@ -138,6 +155,19 @@ export default async function DashboardPage() {
           </div>
         </aside>
       </div>
+    </div>
+  );
+}
+
+function EngineCard({ icon, title, detail, status, muted }: { icon: React.ReactNode; title: string; detail: string; status: string; muted?: boolean }) {
+  return (
+    <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+      <div className={muted ? "mb-3 text-slate-300" : "brand-mark mb-3 h-10 w-10"}>{icon}</div>
+      <p className="truncate font-bold text-white">{title}</p>
+      <p className="mt-1 min-h-10 break-words text-xs leading-5 text-slate-300">{detail}</p>
+      <span className={`mt-3 inline-flex rounded-full border px-2 py-1 text-[11px] font-bold ${muted ? "border-slate-500/30 bg-slate-500/10 text-slate-300" : "border-cyan-300/25 bg-cyan-300/10 text-cyan-100"}`}>
+        {status}
+      </span>
     </div>
   );
 }
