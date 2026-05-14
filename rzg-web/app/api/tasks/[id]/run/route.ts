@@ -47,6 +47,16 @@ type CompetitorInsightData = Pick<
   error?: string;
 };
 
+type ProposalSignals = {
+  clientName: string | null;
+  industry: string | null;
+  painPoints: string[];
+  requestedService: string | null;
+  goals: string[];
+  budget: string | null;
+  timeline: string | null;
+};
+
 function truncateMemoryContent(content: string): string {
   if (content.length <= MAX_MEMORY_CONTENT_CHARS) return content;
   return `${content.slice(0, MAX_MEMORY_CONTENT_CHARS).trimEnd()}...`;
@@ -68,9 +78,15 @@ function buildMemoryContextBlock(entries: MemoryEntry[], agentId: string): strin
   return `${block.slice(0, MAX_MEMORY_BLOCK_CHARS).trimEnd()}\n\n[Memory context truncated for execution budget.]`;
 }
 
-function buildExecutionPrompt(memoryBlock: string, auditBlock: string, competitorBlock: string, prompt: string): string {
-  if (!memoryBlock && !auditBlock && !competitorBlock) return prompt;
-  const sections = [memoryBlock, auditBlock, competitorBlock, `## Worker Task\n${prompt}`].filter(Boolean);
+function buildExecutionPrompt(
+  memoryBlock: string,
+  auditBlock: string,
+  competitorBlock: string,
+  proposalBlock: string,
+  prompt: string
+): string {
+  if (!memoryBlock && !auditBlock && !competitorBlock && !proposalBlock) return prompt;
+  const sections = [memoryBlock, auditBlock, competitorBlock, proposalBlock, `## Worker Task\n${prompt}`].filter(Boolean);
   return sections.join("\n\n");
 }
 
@@ -82,6 +98,11 @@ function isWebsiteAuditWorker(agent: { name: string; role: string; goal: string 
 function isCompetitorIntelligenceWorker(agent: { name: string; role: string; goal: string }): boolean {
   const haystack = `${agent.name} ${agent.role} ${agent.goal}`.toLowerCase();
   return haystack.includes("competitor") && (haystack.includes("intelligence") || haystack.includes("research"));
+}
+
+function isProposalBuilderWorker(agent: { name: string; role: string; goal: string }): boolean {
+  const haystack = `${agent.name} ${agent.role} ${agent.goal}`.toLowerCase();
+  return haystack.includes("proposal") && (haystack.includes("builder") || haystack.includes("client") || haystack.includes("sales"));
 }
 
 function extractWebsiteUrl(prompt: string): string | null {
@@ -376,6 +397,120 @@ Produce a professional competitor intelligence report with:
 Ground conclusions in the fetched positioning signals. If a competitor could not be fetched, note that limitation without inventing facts.`;
 }
 
+function extractLineValue(prompt: string, labels: string[]): string | null {
+  for (const label of labels) {
+    const match = prompt.match(new RegExp(`${label}\\s*[:\\-]\\s*([^\\n]+)`, "i"));
+    if (match?.[1]) return match[1].trim();
+  }
+  return null;
+}
+
+function extractListSignals(prompt: string, labels: string[], fallbackPattern: RegExp): string[] {
+  const explicit = extractLineValue(prompt, labels);
+  const value = explicit ?? prompt.match(fallbackPattern)?.[1]?.trim() ?? "";
+  if (!value) return [];
+
+  return value
+    .split(/[,;]|\band\b|•|-/i)
+    .map((item) => item.trim())
+    .filter((item) => item.length > 2)
+    .slice(0, 8);
+}
+
+function extractProposalSignals(prompt: string): ProposalSignals {
+  const clientName = extractLineValue(prompt, ["client", "client name", "business", "business name", "company", "company name"])
+    ?? prompt.match(/\b(?:for|client is|business is|company is)\s+([A-Z][A-Za-z0-9&'.\-\s]{2,80})(?:[.,\n]|$)/)?.[1]?.trim()
+    ?? null;
+  const industry = extractLineValue(prompt, ["industry", "market", "sector", "vertical"])
+    ?? prompt.match(/\b(?:in the|for the)\s+([A-Za-z0-9&'.\-\s]{3,60})\s+(?:industry|market|sector|space)\b/i)?.[1]?.trim()
+    ?? null;
+  const requestedService = extractLineValue(prompt, ["service", "requested service", "scope", "project", "need", "needs"])
+    ?? prompt.match(/\b(?:needs?|looking for|wants?|requested)\s+([^.\n]{4,140})/i)?.[1]?.trim()
+    ?? null;
+  const budget = extractLineValue(prompt, ["budget", "investment", "price", "pricing"])
+    ?? prompt.match(/\b(?:budget|investment|price|pricing)\s*(?:is|of|:)?\s*([^.\n]{2,80})/i)?.[1]?.trim()
+    ?? prompt.match(/(?:\$|USD\s*)[0-9][0-9,]*(?:\s*-\s*(?:\$|USD\s*)?[0-9][0-9,]*)?/i)?.[0]?.trim()
+    ?? null;
+  const timeline = extractLineValue(prompt, ["timeline", "deadline", "launch date", "start date"])
+    ?? prompt.match(/\b(?:timeline|deadline|launch|start)\s*(?:is|by|:)?\s*([^.\n]{3,100})/i)?.[1]?.trim()
+    ?? null;
+
+  return {
+    clientName,
+    industry,
+    requestedService,
+    budget,
+    timeline,
+    painPoints: extractListSignals(prompt, ["pain points", "problems", "challenges", "issues"], /\b(?:struggling with|pain points include|challenges include)\s+([^.\n]+)/i),
+    goals: extractListSignals(prompt, ["goals", "objectives", "desired outcome", "desired outcomes"], /\b(?:goals? include|wants to|trying to)\s+([^.\n]+)/i),
+  };
+}
+
+function findProposalMemory(entries: MemoryEntry[], keywords: string[]): MemoryEntry[] {
+  return entries
+    .filter((entry) => {
+      const haystack = `${entry.key} ${entry.content}`.toLowerCase();
+      return keywords.some((keyword) => haystack.includes(keyword));
+    })
+    .slice(0, 6);
+}
+
+function summarizeMemoryEntries(entries: MemoryEntry[]): string {
+  if (entries.length === 0) return "- Not found in memory";
+  return entries.map((entry) => `- ${entry.key}: ${truncateMemoryContent(entry.content)}`).join("\n");
+}
+
+function buildClientProposalContext(signals: ProposalSignals, memoryEntries: MemoryEntry[]): string {
+  const servicesMemory = findProposalMemory(memoryEntries, ["service", "offer", "package", "deliverable"]);
+  const pricingMemory = findProposalMemory(memoryEntries, ["pricing", "price", "rate", "budget", "fee", "investment"]);
+  const brandVoiceMemory = findProposalMemory(memoryEntries, ["brand voice", "voice", "tone", "writing style"]);
+  const positioningMemory = findProposalMemory(memoryEntries, ["offer positioning", "positioning", "differentiator", "value proposition"]);
+  const sopMemory = findProposalMemory(memoryEntries, ["sop", "process", "workflow", "methodology", "standard operating"]);
+  const hasPricingMemory = pricingMemory.length > 0;
+
+  return `## Client Proposal Context
+Use this structured brief and business memory to produce a client-ready proposal. Do not invent exact pricing if pricing memory is missing.
+
+### Client Brief Signals
+- Client/business name: ${signals.clientName ?? "Not specified"}
+- Industry: ${signals.industry ?? "Not specified"}
+- Requested service: ${signals.requestedService ?? "Not specified"}
+- Pain points: ${signals.painPoints.length ? signals.painPoints.join(" | ") : "Not specified"}
+- Goals: ${signals.goals.length ? signals.goals.join(" | ") : "Not specified"}
+- Budget: ${signals.budget ?? "Not specified"}
+- Timeline: ${signals.timeline ?? "Not specified"}
+
+### Relevant Business Memory
+Services:
+${summarizeMemoryEntries(servicesMemory)}
+
+Pricing:
+${summarizeMemoryEntries(pricingMemory)}
+
+Brand Voice:
+${summarizeMemoryEntries(brandVoiceMemory)}
+
+Offer Positioning:
+${summarizeMemoryEntries(positioningMemory)}
+
+SOPs / Delivery Process:
+${summarizeMemoryEntries(sopMemory)}
+
+### Proposal Output Requirements
+Generate a polished, client-ready proposal with:
+- Proposal title
+- Client problem summary
+- Recommended solution
+- Scope of work
+- Timeline
+- Deliverables
+- Pricing section ${hasPricingMemory ? "using the available pricing memory where relevant" : "with placeholders only, because no pricing memory was found"}
+- Next steps
+- Professional closing
+
+Keep the proposal specific to the client brief. Use confident business language. If a detail is missing, use a tasteful placeholder instead of making up facts.`;
+}
+
 export async function POST(req: NextRequest, { params }: Params) {
   const { id } = await params;
   const auth = await getAuthenticatedWorkspace();
@@ -399,11 +534,13 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const prompt = parsed.data.overridePrompt || task.prompt;
   const isCompetitorWorker = isCompetitorIntelligenceWorker(agent);
-  const websiteUrl = !isCompetitorWorker && isWebsiteAuditWorker(agent) ? extractWebsiteUrl(prompt) : null;
+  const isProposalWorker = isProposalBuilderWorker(agent);
+  const websiteUrl = !isCompetitorWorker && !isProposalWorker && isWebsiteAuditWorker(agent) ? extractWebsiteUrl(prompt) : null;
   const competitorUrls = isCompetitorWorker ? extractWebsiteUrls(prompt, 5) : [];
 
   let memoryContext = "";
   let memoryCount = 0;
+  let memoryEntriesForRun: MemoryEntry[] = [];
 
   // Memory is only injected for workers that explicitly opt into memory.
   // This keeps non-memory workers deterministic and avoids silently expanding
@@ -426,8 +563,9 @@ export async function POST(req: NextRequest, { params }: Params) {
       .orderBy(desc(memories.updatedAt))
       .limit(MAX_MEMORY_ENTRIES);
 
-    memoryCount = memoryEntries.length;
-    memoryContext = buildMemoryContextBlock(memoryEntries, agent.id);
+    memoryEntriesForRun = memoryEntries;
+    memoryCount = memoryEntriesForRun.length;
+    memoryContext = buildMemoryContextBlock(memoryEntriesForRun, agent.id);
   }
 
   // Create task run record
@@ -660,7 +798,85 @@ No valid competitor URLs were detected in the task prompt. Ask the user for 2-5 
           }
         }
 
-        const executionPrompt = buildExecutionPrompt(memoryContext, auditContext, competitorContext, prompt);
+        let proposalContext = "";
+        if (isProposalWorker) {
+          let activeProposalTool: string | null = null;
+          try {
+            activeProposalTool = "proposal_brief";
+            await emitEvent({
+              type: "tool_start",
+              tool_name: "proposal_brief",
+              content: "Reading client brief",
+            });
+            const proposalSignals = extractProposalSignals(prompt);
+            await emitEvent({
+              type: "tool_end",
+              tool_name: "proposal_brief",
+              content: `Read client brief${proposalSignals.clientName ? ` for ${proposalSignals.clientName}` : ""}.`,
+              metadata: {
+                hasClientName: Boolean(proposalSignals.clientName),
+                hasIndustry: Boolean(proposalSignals.industry),
+                painPointCount: proposalSignals.painPoints.length,
+                goalCount: proposalSignals.goals.length,
+                hasBudget: Boolean(proposalSignals.budget),
+                hasTimeline: Boolean(proposalSignals.timeline),
+              },
+            });
+            activeProposalTool = null;
+
+            activeProposalTool = "proposal_memory";
+            await emitEvent({
+              type: "tool_start",
+              tool_name: "proposal_memory",
+              content: "Loading business memory",
+            });
+            const pricingMemoryCount = findProposalMemory(memoryEntriesForRun, ["pricing", "price", "rate", "budget", "fee", "investment"]).length;
+            await emitEvent({
+              type: "tool_end",
+              tool_name: "proposal_memory",
+              content: `Loaded ${memoryEntriesForRun.length} business memory ${memoryEntriesForRun.length === 1 ? "entry" : "entries"} for proposal context.`,
+              metadata: { count: memoryEntriesForRun.length, pricingMemoryCount },
+            });
+            activeProposalTool = null;
+
+            activeProposalTool = "proposal_structure";
+            await emitEvent({
+              type: "tool_start",
+              tool_name: "proposal_structure",
+              content: "Structuring proposal",
+            });
+            await emitEvent({
+              type: "tool_end",
+              tool_name: "proposal_structure",
+              content: "Structured client proposal framework",
+            });
+            activeProposalTool = null;
+
+            activeProposalTool = "offer_build";
+            await emitEvent({
+              type: "tool_start",
+              tool_name: "offer_build",
+              content: "Building offer",
+            });
+            proposalContext = buildClientProposalContext(proposalSignals, memoryEntriesForRun);
+            await emitEvent({
+              type: "tool_end",
+              tool_name: "offer_build",
+              content: "Built client proposal context and offer guidance",
+            });
+            activeProposalTool = null;
+          } catch (proposalErr) {
+            const msg = proposalErr instanceof Error ? proposalErr.message : "Unknown proposal builder error";
+            await emitEvent({
+              type: "tool_end",
+              tool_name: activeProposalTool ?? "proposal_brief",
+              content: `Proposal builder preflight skipped: ${msg}`,
+              metadata: { error: msg },
+            });
+          }
+        }
+
+        const executionPrompt = buildExecutionPrompt(memoryContext, auditContext, competitorContext, proposalContext, prompt);
 
         if (websiteUrl) {
           await emitEvent({
@@ -674,6 +890,13 @@ No valid competitor URLs were detected in the task prompt. Ask the user for 2-5 
             type: "tool_start",
             tool_name: "strategy_generation",
             content: "Generating strategy",
+          });
+        }
+        if (isProposalWorker) {
+          await emitEvent({
+            type: "tool_start",
+            tool_name: "proposal_generation",
+            content: "Generating client-ready proposal",
           });
         }
 
@@ -751,6 +974,13 @@ No valid competitor URLs were detected in the task prompt. Ask the user for 2-5 
             type: "tool_end",
             tool_name: "strategy_generation",
             content: "Generated competitor intelligence strategy",
+          });
+        }
+        if (isProposalWorker) {
+          await emitEvent({
+            type: "tool_end",
+            tool_name: "proposal_generation",
+            content: "Generated client-ready proposal",
           });
         }
 
